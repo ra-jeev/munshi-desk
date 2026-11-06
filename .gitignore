@@ -43,3 +43,4 @@ learnings.md
 data/*.lock
 
 .wrangler/
+.neon
