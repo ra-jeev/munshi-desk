@@ -2,6 +2,7 @@ import {
   useActionMutation,
   useActionQuery,
 } from "@agent-native/core/client/hooks";
+import { useT } from "@agent-native/core/client/i18n";
 import { useAgentKitControl } from "@agent-native/toolkit/app/agentkit";
 import { registerActionChatRenderer } from "@agent-native/toolkit/app/chat";
 import { useEffect, useState } from "react";
@@ -20,6 +21,7 @@ import type { Operation } from "../server/lib/contracts";
 import type { view } from "../server/lib/factory";
 
 function EditableProposal({ result }: { result: Preview }) {
+  const t = useT();
   const control = useAgentKitControl();
   const [editing, setEditing] = useState(false);
   const [corrected, setCorrected] = useState<Preview | null>(null);
@@ -43,11 +45,11 @@ function EditableProposal({ result }: { result: Preview }) {
     }
     if (draft && check.error) {
       toast.error(
-        factoryError(check.error) ?? "Could not preview this correction.",
+        factoryError(check.error) ?? t("factory.chatRenderer.couldNotPreviewCorrection"),
       );
       setDraft(null);
     }
-  }, [draft, check.data, check.error]);
+  }, [draft, check.data, check.error, t]);
   if (!result?.operation) return <Skeleton className="h-24 w-full" />;
   const active = corrected ?? result;
   if (editing && active.operation.kind === "create-order")
@@ -67,9 +69,7 @@ function EditableProposal({ result }: { result: Preview }) {
                 );
                 setDraft({ operation, previewId: crypto.randomUUID() });
               } catch {
-                toast.error(
-                  "Could not withdraw the earlier proposal. Try again.",
-                );
+                toast.error(t("factory.chatRenderer.couldNotWithdraw"));
               }
             }}
           />
@@ -78,7 +78,7 @@ function EditableProposal({ result }: { result: Preview }) {
         )}
         {check.isFetching && (
           <p role="status" className="text-sm text-muted-foreground">
-            Checking the corrected plan…
+            {t("factory.chatRenderer.checkingCorrection")}
           </p>
         )}
         <Button
@@ -89,7 +89,7 @@ function EditableProposal({ result }: { result: Preview }) {
             setDraft(null);
           }}
         >
-          Cancel correction
+          {t("factory.chatRenderer.cancelCorrection")}
         </Button>
       </div>
     );
@@ -104,7 +104,7 @@ function EditableProposal({ result }: { result: Preview }) {
             disabled={save.isPending}
             onClick={() => setEditing(true)}
           >
-            Correct order
+            {t("factory.chatRenderer.correctOrder")}
           </Button>
           {corrected && (
             <Button
@@ -119,23 +119,23 @@ function EditableProposal({ result }: { result: Preview }) {
                     requestId: corrected.requestId,
                   });
                   setSaved(true);
-                  toast.success("Corrected order saved.");
+                  toast.success(t("factory.chatRenderer.correctedSaved"));
                 } catch (e) {
                   toast.error(
                     factoryError(e) ??
-                      "The proposal could not be saved. Preview it again.",
+                      t("factory.chatRenderer.proposalCouldNotSave"),
                   );
                 }
               }}
             >
-              {save.isPending ? "Saving…" : "Approve corrected order"}
+              {save.isPending ? t("factory.chatRenderer.saving") : t("factory.chatRenderer.approveCorrectedOrder")}
             </Button>
           )}
         </div>
       )}
       {saved && (
         <p role="status" className="text-sm text-muted-foreground">
-          Corrected order saved.
+          {t("factory.chatRenderer.correctedSaved")}
         </p>
       )}
     </div>

@@ -1,3 +1,4 @@
+import { useT } from "@agent-native/core/client/i18n";
 import {
   useActionMutation,
   useActionQuery,
@@ -23,15 +24,7 @@ import { factoryError } from "@/lib/factory-error";
 import type { Operation } from "../../../server/lib/contracts";
 import { ProposalSummary, type Factory, type Preview } from "./FactoryPage";
 type Settings = Extract<Operation, { kind: "update-settings" }>["settings"];
-const days = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
+const dayKeys = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const;
 function SettingsForm({
   data,
   onPreview,
@@ -41,6 +34,7 @@ function SettingsForm({
   onPreview: (op: Operation) => void;
   initial?: Settings | undefined;
 }) {
+  const t = useT();
   const [shifts, setShifts] = useState(
     initial?.shifts ??
       data.calendar?.shifts ?? [
@@ -104,11 +98,11 @@ function SettingsForm({
       }}
     >
       <section className="space-y-4">
-        <h2 className="font-medium">Working hours, IST</h2>
+        <h2 className="font-medium">{t("factory.settings.workingHours")}</h2>
         {shifts.map((shift, i) => (
           <div key={i} className="flex items-end gap-3">
             <div className="space-y-2">
-              <Label htmlFor={`shift-${i}-start`}>Shift {i + 1} start</Label>
+              <Label htmlFor={`shift-${i}-start`}>{t("factory.settings.shiftStart", { n: i + 1 })}</Label>
               <Input
                 id={`shift-${i}-start`}
                 value={shift.start}
@@ -125,7 +119,7 @@ function SettingsForm({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor={`shift-${i}-end`}>Shift {i + 1} end</Label>
+              <Label htmlFor={`shift-${i}-end`}>{t("factory.settings.shiftEnd", { n: i + 1 })}</Label>
               <Input
                 id={`shift-${i}-end`}
                 value={shift.end}
@@ -146,7 +140,7 @@ function SettingsForm({
                 variant="ghost"
                 onClick={() => setShifts((s) => s.filter((_, j) => j !== i))}
               >
-                Remove
+                {t("factory.settings.remove")}
               </Button>
             )}
           </div>
@@ -159,30 +153,33 @@ function SettingsForm({
               setShifts((s) => [...s, { start: "19:00", end: "23:00" }])
             }
           >
-            Add shift
+            {t("factory.settings.addShift")}
           </Button>
         )}
         <fieldset className="space-y-3">
-          <legend className="mb-3 text-sm font-medium">Weekly days off</legend>
+          <legend className="mb-3 text-sm font-medium">{t("factory.settings.weeklyOff")}</legend>
           <div className="flex flex-wrap gap-4">
-            {days.map((day, i) => (
-              <div key={day} className="flex items-center gap-2">
-                <Checkbox
-                  id={`off-${i}`}
-                  checked={weeklyOff.includes(i)}
-                  onCheckedChange={(checked) =>
-                    setWeeklyOff((v) =>
-                      checked ? [...v, i] : v.filter((d) => d !== i),
-                    )
-                  }
-                />
-                <Label htmlFor={`off-${i}`}>{day}</Label>
-              </div>
-            ))}
+            {dayKeys.map((dayKey, i) => {
+              const day = t(`factory.daysLong.${dayKey}`);
+              return (
+                <div key={day} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`off-${i}`}
+                    checked={weeklyOff.includes(i)}
+                    onCheckedChange={(checked) =>
+                      setWeeklyOff((v) =>
+                        checked ? [...v, i] : v.filter((d) => d !== i),
+                      )
+                    }
+                  />
+                  <Label htmlFor={`off-${i}`}>{day}</Label>
+                </div>
+              );
+            })}
           </div>
         </fieldset>
         <div className="space-y-2">
-          <Label htmlFor="holidays">Holidays, one date per line</Label>
+          <Label htmlFor="holidays">{t("factory.settings.holidays")}</Label>
           <Textarea
             id="holidays"
             name="holidays"
@@ -196,12 +193,14 @@ function SettingsForm({
         </div>
       </section>
       <section className="space-y-4">
-        <h2 className="font-medium">Default rates</h2>
+        <h2 className="font-medium">{t("factory.settings.defaultRates")}</h2>
         <div className="grid grid-cols-2 gap-4">
           {(["packets", "kg"] as const).map((unit) => (
             <div key={unit} className="space-y-2">
               <Label htmlFor={`rate-${unit}`}>
-                {unit === "kg" ? "INR per kg" : "INR per packet"}
+                {unit === "kg"
+                  ? t("factory.settings.perKgRate")
+                  : t("factory.settings.perPacketRate")}
               </Label>
               <Input
                 id={`rate-${unit}`}
@@ -219,15 +218,15 @@ function SettingsForm({
         </div>
       </section>
       <section className="space-y-4">
-        <h2 className="font-medium">Machines</h2>
+        <h2 className="font-medium">{t("factory.settings.machines")}</h2>
         {machines.map((m, i) => (
           <fieldset key={m.id} className="space-y-4 rounded-xl border p-4">
             <legend className="px-1 text-sm">
-              {m.name || `Machine ${i + 1}`}
+              {m.name || t("factory.settings.machineNumber", { n: i + 1 })}
             </legend>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor={`machine-${i}-name`}>Name</Label>
+                <Label htmlFor={`machine-${i}-name`}>{t("factory.settings.name")}</Label>
                 <Input
                   id={`machine-${i}-name`}
                   value={m.name}
@@ -236,7 +235,7 @@ function SettingsForm({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor={`machine-${i}-stage`}>Stage</Label>
+                <Label htmlFor={`machine-${i}-stage`}>{t("factory.settings.stage")}</Label>
                 <Select
                   value={m.stage}
                   onValueChange={(v) =>
@@ -247,16 +246,16 @@ function SettingsForm({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cutting">Cutting</SelectItem>
-                    <SelectItem value="packing">Packing</SelectItem>
+                    <SelectItem value="cutting">{t("factory.stage.cutting")}</SelectItem>
+                    <SelectItem value="packing">{t("factory.stage.packing")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor={`machine-${i}-speed`}>
                   {m.stage === "cutting"
-                    ? "Speed, kg/hour"
-                    : "Speed, packets/hour"}
+                    ? t("factory.settings.speedKgHour")
+                    : t("factory.settings.speedPacketsHour")}
                 </Label>
                 <Input
                   id={`machine-${i}-speed`}
@@ -276,7 +275,7 @@ function SettingsForm({
               </div>
               <div className="space-y-2">
                 <Label htmlFor={`machine-${i}-changeover`}>
-                  Size changeover, minutes
+                  {t("factory.settings.changeoverMin")}
                 </Label>
                 <Input
                   id={`machine-${i}-changeover`}
@@ -297,7 +296,7 @@ function SettingsForm({
               disabled={machines.length <= 2}
               onClick={() => setMachines((ms) => ms.filter((_, j) => j !== i))}
             >
-              Remove machine
+              {t("factory.settings.removeMachine")}
             </Button>
           </fieldset>
         ))}
@@ -310,7 +309,7 @@ function SettingsForm({
                 ...ms,
                 {
                   id: crypto.randomUUID(),
-                  name: "New machine",
+                  name: t("factory.settings.newMachine"),
                   stage: "packing",
                   speedPerHour: 1200,
                   kgPerHour: 20,
@@ -319,17 +318,18 @@ function SettingsForm({
               ])
             }
           >
-            Add machine
+            {t("factory.settings.addMachine")}
           </Button>
         )}
       </section>
       <Button disabled={busy}>
-        {busy ? "Checking settings…" : "Preview changes"}
+        {busy ? t("factory.settings.checkingSettings") : t("factory.settings.previewChanges")}
       </Button>
     </form>
   );
 }
 export function FactorySettings() {
+  const t = useT();
   const query = useActionQuery("get-factory", {});
   const data = query.data as Factory | undefined;
   const [draft, setDraft] = useState<{
@@ -351,19 +351,19 @@ export function FactorySettings() {
       setDraft(null);
     }
     if (draft && check.error) {
-      setError(factoryError(check.error) ?? "Could not preview settings.");
+      setError(factoryError(check.error) ?? t("factory.settings.previewSettingsFailed"));
       setDraft(null);
     }
-  }, [draft, check.data, check.error]);
+  }, [draft, check.data, check.error, t]);
   if (query.isLoading) return <Skeleton className="h-96 w-full" />;
   if (query.error)
     return (
       <p role="alert">
-        {factoryError(query.error) ?? "Factory settings could not load."}
+        {factoryError(query.error) ?? t("factory.settings.settingsCouldNotLoad")}
       </p>
     );
   if (!data?.ready)
-    return <p>Load demo data on Today before configuring the factory.</p>;
+    return <p>{t("factory.settings.loadDemoFirst")}</p>;
   return (
     <div className="space-y-5">
       {error && (
@@ -384,7 +384,7 @@ export function FactorySettings() {
                 setProposal(null);
               }}
             >
-              Edit
+              {t("factory.common.edit")}
             </Button>
             <Button
               disabled={save.isPending}
@@ -399,16 +399,16 @@ export function FactorySettings() {
                   setProposal(null);
                   setInitial(undefined);
                   setError("");
-                  toast.success("Factory settings saved.");
+                  toast.success(t("factory.settings.settingsSaved"));
                 } catch (e) {
                   setError(
                     factoryError(e) ??
-                      "Settings could not save. Preview them again.",
+                      t("factory.settings.settingsCouldNotSave"),
                   );
                 }
               }}
             >
-              {save.isPending ? "Saving…" : "Approve settings"}
+              {save.isPending ? t("factory.common.saving") : t("factory.settings.approveSettings")}
             </Button>
           </div>
         </div>
@@ -424,7 +424,7 @@ export function FactorySettings() {
       )}
       {check.isFetching && (
         <p role="status" className="text-sm text-muted-foreground">
-          Checking the new plan…
+          {t("factory.settings.checkingNewPlan")}
         </p>
       )}
     </div>

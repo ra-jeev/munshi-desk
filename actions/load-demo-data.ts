@@ -3,8 +3,19 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { getDb, schema } from "../server/db/index.ts";
-import { dateOf } from "../server/domain/scheduler/schedule.ts";
+import { dateOf, isClosed } from "../server/domain/scheduler/schedule.ts";
 import { orgFor, todayIST } from "../server/lib/factory.ts";
+
+/** The nth working day after `today` (skips the weekly off and holidays). */
+export function workingDueDate(today: string, n: number) {
+  const calendar = { shiftStart: "09:00", shiftEnd: "19:00", weeklyOff: [0], holidays: [] as string[], overtime: {} };
+  let day = 0;
+  while (n > 0) {
+    day++;
+    if (!isClosed(calendar, today, day)) n--;
+  }
+  return dateOf(today, day);
+}
 export default defineAction({
   description:
     "Replace this organization factory with fictional demo orders, machines and payments. Destructive reset, requires confirmation.",
@@ -114,7 +125,7 @@ export default defineAction({
           size: "4x6 inch",
           quantity: 12000,
           unit: "packets",
-          dueDate: dateOf(today, 1),
+          dueDate: workingDueDate(today, 1),
           ratePaise: 85,
           priority: 0,
           status: "pending",
@@ -128,7 +139,7 @@ export default defineAction({
           size: "6x8 inch",
           quantity: 18000,
           unit: "packets",
-          dueDate: dateOf(today, 1),
+          dueDate: workingDueDate(today, 2),
           ratePaise: 120,
           priority: 0,
           status: "pending",
@@ -142,7 +153,7 @@ export default defineAction({
           size: "8x12 inch",
           quantity: 20000,
           unit: "packets",
-          dueDate: dateOf(today, 2),
+          dueDate: workingDueDate(today, 3),
           ratePaise: 180,
           priority: 0,
           status: "pending",

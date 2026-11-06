@@ -1,5 +1,6 @@
 import { sendToAgentChat } from "@agent-native/core/client/agent-chat";
 import { appPath } from "@agent-native/core/client/api-path";
+import { useT } from "@agent-native/core/client/i18n";
 import { IconMicrophone, IconPlayerStop } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -49,6 +50,7 @@ async function wav(blob: Blob) {
   }
 }
 export function VoiceInput() {
+  const t = useT();
   const [state, setState] = useState<"idle" | "recording" | "transcribing">(
     "idle",
   );
@@ -71,9 +73,7 @@ export function VoiceInput() {
       !navigator.mediaDevices?.getUserMedia ||
       typeof MediaRecorder === "undefined"
     ) {
-      toast.error(
-        "Voice recording needs a supported browser and HTTPS. You can still type to Munshi.",
-      );
+      toast.error(t("factory.voice.unsupported"));
       return;
     }
     try {
@@ -106,17 +106,17 @@ export function VoiceInput() {
             throw new Error(
               result.statusMessage ??
                 result.message ??
-                "Transcription failed. Try again.",
+                t("factory.voice.transcriptionFailed"),
             );
           sendToAgentChat({
             message: result.text,
             submit: false,
             openSidebar: true,
           });
-          toast.success("Your words are ready in the chat. Review and send.");
+          toast.success(t("factory.voice.transcribedSuccess"));
         } catch (e) {
           toast.error(
-            e instanceof Error ? e.message : "Could not transcribe. Try again.",
+            e instanceof Error ? e.message : t("factory.voice.transcribeFailed"),
           );
         } finally {
           setState("idle");
@@ -130,7 +130,7 @@ export function VoiceInput() {
     } catch {
       stream.current?.getTracks().forEach((t) => t.stop());
       setState("idle");
-      toast.error("Microphone access was unavailable. You can type to Munshi.");
+      toast.error(t("factory.voice.micUnavailable"));
     }
   }
   return (
@@ -150,10 +150,10 @@ export function VoiceInput() {
         <IconMicrophone className="size-4" />
       )}
       {state === "recording"
-        ? "Stop recording"
+        ? t("factory.voice.stopRecording")
         : state === "transcribing"
-          ? "Transcribing…"
-          : "Speak to Munshi"}
+          ? t("factory.voice.transcribing")
+          : t("factory.voice.speakToMunshi")}
     </Button>
   );
 }

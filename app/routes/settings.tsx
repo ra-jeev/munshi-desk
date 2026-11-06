@@ -12,7 +12,7 @@ import { APP_TITLE } from "@/lib/app-config";
 import changelog from "../../CHANGELOG.md?raw";
 
 export function meta() {
-  return [{ title: `Settings - ${APP_TITLE}` }];
+  return [{ title: `Settings - ${APP_TITLE}` }]; // i18n-ignore server meta fallback; client title is localized via useSetPageTitle
 }
 
 // Chat has no app rows here: core Preferences owns the interface language.
@@ -28,7 +28,7 @@ export default function SettingsRoute() {
       appAreas={[
         {
           id: "factory",
-          label: "Factory",
+          label: t("factory.tabLabel"),
           content: <FactorySettings />,
           keywords: "machines shifts holidays rates",
         },

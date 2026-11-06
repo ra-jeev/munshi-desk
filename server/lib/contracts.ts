@@ -190,8 +190,12 @@ export const operation = z.discriminatedUnion("kind", [
       .literal("machine-down")
       .describe("Report a machine stoppage and preview the resulting schedule"),
     machineId: z.string().min(1).describe("Machine UUID from get-factory"),
-    from: date,
-    to: date,
+    from: date.describe(
+      "First stop date (required, YYYY-MM-DD in Asia/Kolkata); a one-day stop has from equal to to",
+    ),
+    to: date.describe(
+      "Last stop date (required, YYYY-MM-DD in Asia/Kolkata); a one-day stop has from equal to to",
+    ),
     reason: z
       .string()
       .trim()

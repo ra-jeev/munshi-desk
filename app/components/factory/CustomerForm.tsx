@@ -1,3 +1,4 @@
+import { useT } from "@agent-native/core/client/i18n";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ export function CustomerForm({
   onPreview: (op: Operation) => void;
   initial?: Extract<Operation, { kind: "add-customer" }> | undefined;
 }) {
+  const t = useT();
   const [busy, setBusy] = useState(false);
   return (
     <form
@@ -32,7 +34,7 @@ export function CustomerForm({
       }}
     >
       <div className="space-y-2">
-        <Label htmlFor="new-customer-name">Customer name</Label>
+        <Label htmlFor="new-customer-name">{t("factory.customer.nameLabel")}</Label>
         <Input
           id="new-customer-name"
           name="name"
@@ -42,7 +44,7 @@ export function CustomerForm({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="new-customer-phone">Phone number, optional</Label>
+        <Label htmlFor="new-customer-phone">{t("factory.customer.phoneLabel")}</Label>
         <Input
           id="new-customer-phone"
           name="phone"
@@ -52,7 +54,7 @@ export function CustomerForm({
         />
       </div>
       <Button className="w-full" disabled={busy}>
-        {busy ? "Checking…" : "Preview customer"}
+        {busy ? t("factory.customer.checking") : t("factory.customer.preview")}
       </Button>
     </form>
   );

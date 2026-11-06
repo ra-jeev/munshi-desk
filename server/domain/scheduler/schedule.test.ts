@@ -290,3 +290,89 @@ test('placeWork: overtime past midnight is not used twice', () => {
   const r = placeWork({ baseDate: BASE, calendar: cal }, [], at(0, 23), 180);
   assert.equal(stamp(BASE, r.end), '2026-10-29 02:00');
 });
+
+// Demo-data due dates (actions/load-demo-data.ts). The demo machines and speeds
+// must finish all 3 orders on time just after the load, whatever the weekday,
+// and a stop or an urgent order must still move a delivery.
+import { dateOf as demoDateOf } from './schedule.ts';
+
+const DEMO_CAL = { shiftStart: '09:00', shiftEnd: '19:00', weeklyOff: [0], holidays: [] as string[], overtime: {} };
+const DEMO_MACHINES: Machine[] = [
+  { id: 1, name: 'Cutter 1', stage: 'cutting', speedPerHour: 3000, kgPerHour: 30, changeoverMin: 20 },
+  { id: 2, name: 'Pouch machine 1', stage: 'packing', speedPerHour: 1600, kgPerHour: 20, changeoverMin: 30 },
+  { id: 3, name: 'Pouch machine 2', stage: 'packing', speedPerHour: 1200, kgPerHour: 15, changeoverMin: 25 },
+];
+
+// The nth working day after `baseDate` (skips the weekly off, Sunday).
+function demoWorkingDue(baseDate: string, n: number) {
+  const [y, m, d] = baseDate.split('-').map(Number) as [number, number, number];
+  let day = 0;
+  while (n > 0) {
+    day++;
+    if (new Date(Date.UTC(y, m - 1, d + day)).getUTCDay() !== 0) n--;
+  }
+  return day;
+}
+
+function demoOrders(baseDate: string): PlanOrder[] {
+  const specs: [string, string, number, number][] = [
+    ['Sharma Packaging', '4x6 inch', 12000, 1],
+    ['Verma Foods', '6x8 inch', 18000, 2],
+    ['Gupta Traders', '8x12 inch', 20000, 3],
+  ];
+  return specs.map(([customer, size, quantity, n], i) => ({
+    id: i + 1,
+    customer,
+    size,
+    quantity,
+    unit: 'packets',
+    dueDate: demoDateOf(baseDate, demoWorkingDue(baseDate, n)),
+    priority: 0,
+    createdAt: `${baseDate} 09:00:0${i + 1}`,
+  }));
+}
+
+const WEEK = ['2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06', '2026-11-07', '2026-11-08']; // Mon..Sun
+
+test('demo load: all 3 orders are on time just after the load, whatever the weekday', () => {
+  for (const base of WEEK) {
+    const plan = schedule({ baseDate: base, now: 9 * 60, calendar: DEMO_CAL, machines: DEMO_MACHINES, orders: demoOrders(base) });
+    for (const o of plan.orders) {
+      assert.equal(o.lateDays, 0, `${base} order ${o.orderId} finishes ${stamp(base, o.finish)}`);
+    }
+    for (const o of demoOrders(base)) {
+      const wd = new Date(o.dueDate + 'T00:00:00Z').getUTCDay();
+      assert.notEqual(wd, 0, `${base} order ${o.id} due ${o.dueDate} is a Sunday`);
+    }
+  }
+});
+
+test('demo load: orders are still on time for a late load at 17:00', () => {
+  for (const base of ['2026-11-02', '2026-11-05', '2026-11-06', '2026-11-07']) {
+    const plan = schedule({ baseDate: base, now: 17 * 60, calendar: DEMO_CAL, machines: DEMO_MACHINES, orders: demoOrders(base) });
+    for (const o of plan.orders) assert.equal(o.lateDays, 0, `${base} 17:00 order ${o.orderId}`);
+  }
+});
+
+test('demo load: after the load, an urgent order moves other deliveries', () => {
+  const base = '2026-11-06'; // Friday load
+  const before = schedule({ baseDate: base, now: 9 * 60, calendar: DEMO_CAL, machines: DEMO_MACHINES, orders: demoOrders(base) });
+  const beforeBy = new Map(before.orders.map((o) => [o.orderId, o.finish]));
+  const urgent: PlanOrder = { id: 4, customer: 'Urgent Co', size: '4x6 inch', quantity: 8000, unit: 'packets', dueDate: demoDateOf(base, 1), priority: 1, createdAt: `${base} 09:00:04` };
+  const after = schedule({ baseDate: base, now: 9 * 60, calendar: DEMO_CAL, machines: DEMO_MACHINES, orders: [...demoOrders(base), urgent] });
+  const moved = after.orders.filter((o) => beforeBy.has(o.orderId) && beforeBy.get(o.orderId) !== o.finish);
+  assert.ok(moved.length >= 1, `urgent order moves a delivery, moved: ${moved.map((o) => o.orderId).join(',')}`);
+  assert.equal(after.orders.find((o) => o.orderId === 4)!.lateDays, 0);
+});
+
+test('demo load: after the load, a machine stop tomorrow moves a delivery', () => {
+  const base = '2026-11-06'; // Friday load, stop Saturday on Pouch machine 1 (id 2)
+  const before = schedule({ baseDate: base, now: 9 * 60, calendar: DEMO_CAL, machines: DEMO_MACHINES, orders: demoOrders(base) });
+  const beforeBy = new Map(before.orders.map((o) => [o.orderId, o.finish]));
+  const after = schedule({
+    baseDate: base, now: 9 * 60, calendar: DEMO_CAL, machines: DEMO_MACHINES, orders: demoOrders(base),
+    down: [{ machineId: 2, from: 1 * 1440 + 540, to: 1 * 1440 + 1140 }],
+  });
+  const moved = after.orders.filter((o) => beforeBy.get(o.orderId) !== o.finish);
+  assert.ok(moved.length >= 1, `stop moves a delivery, moved: ${moved.map((o) => o.orderId).join(',')}`);
+});

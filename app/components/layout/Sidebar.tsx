@@ -408,7 +408,12 @@ export function Sidebar({
         )}
       >
         <HomeNavLink collapsed={collapsed} />
-        {([['/today','Today'],['/orders','Orders'],['/machines','Machines'],['/accounts','Accounts']] as const).map(([to,label]) => <Link key={to} to={to} className="flex min-h-10 items-center rounded-md px-3 text-sm font-medium hover:bg-sidebar-accent" aria-label={label}>{collapsed ? label.slice(0,1) : label}</Link>)}
+        {([
+          ["/today", t("factory.nav.today"), t("factory.nav.todayShort")],
+          ["/orders", t("factory.nav.orders"), t("factory.nav.ordersShort")],
+          ["/machines", t("factory.nav.machines"), t("factory.nav.machinesShort")],
+          ["/accounts", t("factory.nav.accounts"), t("factory.nav.accountsShort")],
+        ] as const).map(([to, label, short]) => <Link key={to} to={to} className="flex min-h-10 items-center rounded-md px-3 text-sm font-medium hover:bg-sidebar-accent" aria-label={label}>{collapsed ? short : label}</Link>)}
         <ChatThreadsSection collapsed={collapsed} />
       </nav>
 

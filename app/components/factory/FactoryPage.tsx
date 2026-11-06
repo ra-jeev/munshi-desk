@@ -3,6 +3,7 @@ import {
   useActionMutation,
   useActionQuery,
 } from "@agent-native/core/client/hooks";
+import { useT } from "@agent-native/core/client/i18n";
 import { buildSettingsRoute } from "@agent-native/core/client/navigation";
 import { useSetPageTitle } from "@agent-native/toolkit/app-shell/header-actions";
 import {
@@ -55,14 +56,22 @@ import { VoiceInput } from "./VoiceInput";
 
 export type Factory = ReturnType<typeof view>;
 export type Preview = ReturnType<typeof preview>;
+export function uiLocale(): "en-IN" | "hi-IN" {
+  if (
+    typeof document !== "undefined" &&
+    document.documentElement.lang === "hi-IN"
+  )
+    return "hi-IN";
+  return "en-IN";
+}
 const money = (n: number) =>
-  new Intl.NumberFormat("en-IN", {
+  new Intl.NumberFormat(uiLocale(), {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 2,
   }).format(n / 100);
 const dateLabel = (v: string) =>
-  new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short" }).format(
+  new Intl.DateTimeFormat(uiLocale(), { day: "numeric", month: "short" }).format(
     new Date(v + "T12:00:00+05:30"),
   );
 const errorMessage = factoryError;
@@ -77,6 +86,7 @@ export const ask = (message: string) =>
   sendToAgentChat({ message, submit: true, openSidebar: true });
 
 export function ProposalSummary({ result }: { result: Preview }) {
+  const t = useT();
   const op = result.operation;
   return (
     <div className="space-y-4 rounded-xl border bg-card p-4 text-sm">
@@ -85,14 +95,14 @@ export function ProposalSummary({ result }: { result: Preview }) {
           {
             (
               {
-                "create-order": "Order proposal",
-                "update-order": "Update order",
-                "record-payment": "Payment proposal",
-                "cancel-order": "Cancel order",
-                "machine-down": "Machine stoppage",
-                "add-customer": "Add customer",
-                "job-progress": "Job progress",
-                "update-settings": "Factory settings",
+                "create-order": t("factory.proposal.createOrder"),
+                "update-order": t("factory.proposal.updateOrder"),
+                "record-payment": t("factory.proposal.recordPayment"),
+                "cancel-order": t("factory.proposal.cancelOrder"),
+                "machine-down": t("factory.proposal.machineDown"),
+                "add-customer": t("factory.proposal.addCustomer"),
+                "job-progress": t("factory.proposal.jobProgress"),
+                "update-settings": t("factory.proposal.updateSettings"),
               } as const
             )[op.kind]
           }
@@ -106,32 +116,32 @@ export function ProposalSummary({ result }: { result: Preview }) {
       {(op.kind === "create-order" || op.kind === "update-order") && (
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <span className="text-muted-foreground">Product</span>
+            <span className="text-muted-foreground">{t("factory.proposal.product")}</span>
             <p>{op.order.product}</p>
           </div>
           <div>
-            <span className="text-muted-foreground">Size</span>
+            <span className="text-muted-foreground">{t("factory.proposal.size")}</span>
             <p>{op.order.size}</p>
           </div>
           <div>
-            <span className="text-muted-foreground">Quantity</span>
+            <span className="text-muted-foreground">{t("factory.proposal.quantity")}</span>
             <p>
-              {op.order.quantity.toLocaleString("en-IN")} {op.order.unit}
+              {op.order.quantity.toLocaleString(uiLocale())} {t(`factory.units.${op.order.unit}`)}
             </p>
           </div>
           <div>
-            <span className="text-muted-foreground">Due</span>
+            <span className="text-muted-foreground">{t("factory.proposal.due")}</span>
             <p>{dateLabel(op.order.dueDate)}</p>
           </div>
           <div>
-            <span className="text-muted-foreground">Rate</span>
+            <span className="text-muted-foreground">{t("factory.proposal.rate")}</span>
             <p>
               {money(op.order.ratePaise)} /{" "}
-              {op.order.unit === "kg" ? "kg" : "packet"}
+              {t(`factory.units.${op.order.unit === "kg" ? "kg" : "packet"}`)}
             </p>
           </div>
           <div>
-            <span className="text-muted-foreground">Amount</span>
+            <span className="text-muted-foreground">{t("factory.proposal.amount")}</span>
             <p>{money(op.order.quantity * op.order.ratePaise)}</p>
           </div>
         </div>
@@ -149,49 +159,62 @@ export function ProposalSummary({ result }: { result: Preview }) {
         "orderDetails" in result &&
         result.orderDetails && (
           <p>
-            {result.orderDetails.product} · {result.orderDetails.size} ·{" "}
-            {result.orderDetails.quantity.toLocaleString("en-IN")}{" "}
-            {result.orderDetails.unit}
+            {t("factory.proposal.orderLine", {
+              product: result.orderDetails.product,
+              size: result.orderDetails.size,
+              qty: result.orderDetails.quantity.toLocaleString(uiLocale()),
+              unit: t(`factory.units.${result.orderDetails.unit}`),
+            })}
           </p>
         )}
       {op.kind === "job-progress" && (
         <p>
-          {op.status === "started"
-            ? "Start"
-            : op.status === "paused"
-              ? "Pause"
-              : "Complete"}{" "}
-          {op.stage} · {op.quantity.toLocaleString("en-IN")}{" "}
-          {"orderDetails" in result
-            ? (result.orderDetails?.unit ?? "units")
-            : "units"}
+          {t("factory.proposal.jobProgressLine", {
+            verb: t(
+              `factory.proposal.${op.status === "started" ? "start" : op.status === "paused" ? "pause" : "complete"}`,
+            ),
+            stage: t(`factory.stageLower.${op.stage}`),
+            qty: op.quantity.toLocaleString(uiLocale()),
+            unit:
+              "orderDetails" in result
+                ? t(`factory.units.${result.orderDetails?.unit ?? "packets"}`)
+                : t("factory.proposal.units"),
+          })}
         </p>
       )}
       {op.kind === "update-settings" && (
         <div className="space-y-3">
           <p>
-            Shifts:{" "}
-            {op.settings.shifts.map((s) => s.start + "–" + s.end).join(", ")}{" "}
-            IST
+            {t("factory.proposal.shifts", {
+              shifts: op.settings.shifts.map((s) => s.start + "–" + s.end).join(", "),
+            })}
           </p>
           <p>
-            Weekly off:{" "}
-            {op.settings.weeklyOff
-              .map((d) => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d])
-              .join(", ") || "None"}
+            {t("factory.proposal.weeklyOff", {
+              days:
+                op.settings.weeklyOff
+                  .map((d) =>
+                    t(
+                      `factory.days.${["sun", "mon", "tue", "wed", "thu", "fri", "sat"][d] as string}`,
+                    ),
+                  )
+                  .join(", ") || t("factory.proposal.none"),
+            })}
           </p>
-          <p>Holidays: {op.settings.holidays.join(", ") || "None"}</p>
+          <p>{t("factory.proposal.holidays", { dates: op.settings.holidays.join(", ") || t("factory.proposal.none") })}</p>
           <p>
-            Default rate: {money(op.settings.defaultRates.packets)} per packet ·{" "}
-            {money(op.settings.defaultRates.kg)} per kg
+            {t("factory.proposal.defaultRate", {
+              packetRate: money(op.settings.defaultRates.packets),
+              kgRate: money(op.settings.defaultRates.kg),
+            })}
           </p>
           {op.settings.machines.map((m) => (
             <p key={m.id}>
               {m.name} ·{" "}
               {m.stage === "cutting"
-                ? m.kgPerHour + " kg/hour"
-                : m.speedPerHour + " packets/hour"}{" "}
-              · {m.changeoverMin} min changeover
+                ? t("factory.proposal.kgPerHour", { n: m.kgPerHour })
+                : t("factory.proposal.packetsPerHour", { n: m.speedPerHour.toLocaleString(uiLocale()) })}{" "}
+              · {t("factory.proposal.changeover", { n: m.changeoverMin })}
             </p>
           ))}
         </div>
@@ -199,23 +222,32 @@ export function ProposalSummary({ result }: { result: Preview }) {
       {op.kind === "record-payment" && (
         <>
           <p>
-            {money(op.amountPaise)} received by {op.mode}
+            {t("factory.proposal.receivedBy", {
+              amount: money(op.amountPaise),
+              mode: t(`factory.paymentMode.${op.mode}`),
+            })}
           </p>
           {typeof result.balanceAfterPaise === "number" &&
             typeof result.balanceBeforePaise === "number" && (
               <p className="text-muted-foreground">
-                Balance {money(result.balanceBeforePaise!)} to{" "}
-                {money(result.balanceAfterPaise)}
+                {t("factory.proposal.balance", {
+                  before: money(result.balanceBeforePaise!),
+                  after: money(result.balanceAfterPaise),
+                })}
               </p>
             )}
         </>
       )}
       {op.kind === "machine-down" && (
         <p>
-          {dateLabel(op.from)} to {dateLabel(op.to)} · {op.reason}
+          {t("factory.proposal.machineDownLine", {
+            from: dateLabel(op.from),
+            to: dateLabel(op.to),
+            reason: op.reason,
+          })}
         </p>
       )}
-      {op.kind === "create-order" && op.noOvertime && <p>No added overtime.</p>}
+      {op.kind === "create-order" && op.noOvertime && <p>{t("factory.proposal.noOvertime")}</p>}
       {"planningNote" in result && result.planningNote && (
         <p className="text-muted-foreground">{result.planningNote}</p>
       )}
@@ -230,13 +262,13 @@ export function ProposalSummary({ result }: { result: Preview }) {
             <span>
               {d.moved && d.previousReady && (
                 <span className="mr-2 text-muted-foreground">
-                  {d.previousReady} to
+                  {d.previousReady} {t("factory.proposal.to")}
                 </span>
               )}
               {d.ready}
               {d.lateDays > 0 && (
                 <span className="ml-2 text-destructive">
-                  {d.lateDays}d late
+                  {t("factory.proposal.late", { days: d.lateDays })}
                 </span>
               )}
             </span>
@@ -244,10 +276,11 @@ export function ProposalSummary({ result }: { result: Preview }) {
         ))}
       {Object.keys(result.option.overtime).length > 0 && (
         <p className="text-muted-foreground">
-          Overtime:{" "}
-          {Object.entries(result.option.overtime)
-            .map(([d, m]) => `${dateLabel(d)}: ${m / 60}h`)
-            .join(", ")}
+          {t("factory.proposal.overtime", {
+            items: Object.entries(result.option.overtime)
+              .map(([d, m]) => `${dateLabel(d)}: ${m / 60}h`)
+              .join(", "),
+          })}
         </p>
       )}
     </div>
@@ -263,6 +296,7 @@ export function OrderForm({
   onPreview: (op: Operation) => void;
   initial?: Extract<Operation, { kind: "create-order" }> | undefined;
 }) {
+  const t = useT();
   const [busy, setBusy] = useState(false);
   const [customerId, setCustomerId] = useState(
     initial?.order.customerId ?? data.customers[0]?.id ?? "",
@@ -298,7 +332,7 @@ export function OrderForm({
       }}
     >
       <div className="space-y-2">
-        <Label htmlFor="customer">Customer</Label>
+        <Label htmlFor="customer">{t("factory.orderForm.customer")}</Label>
         <Select value={customerId} onValueChange={setCustomerId}>
           <SelectTrigger id="customer">
             <SelectValue />
@@ -314,21 +348,21 @@ export function OrderForm({
       </div>
       <Field
         name="product"
-        label="Product"
+        label={t("factory.orderForm.product")}
         defaultValue={initial?.order.product ?? "Transparent pouches"}
         required
       />
       <Field
         name="size"
-        label="Pouch size"
-        placeholder="4x6 inch"
+        label={t("factory.orderForm.pouchSize")}
+        placeholder={t("factory.orderForm.pouchSizePlaceholder")}
         defaultValue={initial?.order.size ?? ""}
         required
       />
       <div className="grid grid-cols-2 gap-4">
         <Field
           name="quantity"
-          label="Quantity"
+          label={t("factory.orderForm.quantity")}
           type="number"
           min="1"
           max="10000000"
@@ -336,7 +370,7 @@ export function OrderForm({
           required
         />
         <div className="space-y-2">
-          <Label htmlFor="unit">Unit</Label>
+          <Label htmlFor="unit">{t("factory.orderForm.unit")}</Label>
           <Select
             value={unit}
             onValueChange={(v) => setUnit(v as "kg" | "packets")}
@@ -345,8 +379,8 @@ export function OrderForm({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="packets">Packets</SelectItem>
-              <SelectItem value="kg">Kilograms</SelectItem>
+              <SelectItem value="packets">{t("factory.units.packetsLabel")}</SelectItem>
+              <SelectItem value="kg">{t("factory.units.kilogramsLabel")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -354,14 +388,14 @@ export function OrderForm({
       <div className="grid grid-cols-2 gap-4">
         <Field
           name="due"
-          label="Due date"
+          label={t("factory.orderForm.dueDate")}
           type="date"
           defaultValue={initial?.order.dueDate ?? today()}
           required
         />
         <Field
           name="rate"
-          label="Rate per unit, INR"
+          label={t("factory.orderForm.ratePerUnit")}
           type="number"
           step="0.01"
           min="0"
@@ -374,7 +408,7 @@ export function OrderForm({
         />
       </div>
       <Button type="submit" className="w-full" disabled={busy || !customerId}>
-        {busy ? "Checking proposal…" : "Preview order"}
+        {busy ? t("factory.orderForm.checkingProposal") : t("factory.orderForm.previewOrder")}
         <IconArrowRight className="size-4" />
       </Button>
     </form>
@@ -398,7 +432,8 @@ export function FactoryPage({
 }: {
   section: "today" | "orders" | "machines" | "accounts";
 }) {
-  useSetPageTitle(section.charAt(0).toUpperCase() + section.slice(1));
+  const t = useT();
+  useSetPageTitle(t(`factory.nav.${section}`));
   const [searchParams, setSearchParams] = useSearchParams();
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const query = useActionQuery("get-factory", {});
@@ -494,7 +529,7 @@ export function FactoryPage({
         plannedAt: proposal.plannedAt,
         requestId,
       });
-      toast.success("Saved to your factory.");
+      toast.success(t("factory.page.savedToFactory"));
       setFormDraft(null);
       setProposal(null);
       setDialog(null);
@@ -533,7 +568,7 @@ export function FactoryPage({
       <div className="p-8 space-y-4">
         <p role="alert">{errorMessage(query.error)}</p>
         <Button variant="outline" onClick={() => query.refetch()}>
-          Try again
+          {t("factory.common.tryAgain")}
         </Button>
       </div>
     );
@@ -553,14 +588,14 @@ export function FactoryPage({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <IconCalendar className="size-4" />
-          {new Intl.DateTimeFormat("en-IN", {
+          {new Intl.DateTimeFormat(uiLocale(), {
             timeZone: "Asia/Kolkata",
             weekday: "long",
             day: "numeric",
             month: "long",
           }).format(new Date())}
           <span className="rounded border px-2 py-0.5 text-xs">
-            Demo factory
+            {t("factory.page.demoFactory")}
           </span>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -575,7 +610,7 @@ export function FactoryPage({
                 setProposal(null);
               }}
             >
-              Add customer
+              {t("factory.page.addCustomer")}
             </Button>
           )}
           <Button
@@ -586,7 +621,7 @@ export function FactoryPage({
             }
           >
             <IconMessage className="size-4" />
-            Ask Munshi
+            {t("factory.page.askMunshi")}
           </Button>
           <Button
             size="sm"
@@ -607,17 +642,19 @@ export function FactoryPage({
             }}
           >
             <IconPlus className="size-4" />
-            {section === "accounts" ? "Record payment" : "New order"}
+            {section === "accounts"
+              ? t("factory.page.recordPayment")
+              : t("factory.page.newOrder")}
           </Button>
         </div>
       </div>
       {!data.ready ? (
         <div className="rounded-xl border bg-card p-8 space-y-4">
-          <h2 className="text-xl font-semibold">Set up your demo factory</h2>
+          <h2 className="text-xl font-semibold">{t("factory.page.setupTitle")}</h2>
           <p className="text-muted-foreground">
-            Load fictional customers, three machines, orders and a payment.
+            {t("factory.page.setupDesc")}
           </p>
-          <Button onClick={() => setResetOpen(true)}>Load demo data</Button>
+          <Button onClick={() => setResetOpen(true)}>{t("factory.page.loadDemoData")}</Button>
         </div>
       ) : (
         <>
@@ -626,7 +663,7 @@ export function FactoryPage({
               {late.length > 0 && (
                 <section className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
                   <h2 className="mb-3 font-medium">
-                    Deliveries needing attention
+                    {t("factory.page.lateTitle")}
                   </h2>
                   {late.map((o) => (
                     <div
@@ -641,32 +678,30 @@ export function FactoryPage({
                           }
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {o.quantity.toLocaleString("en-IN")} {o.unit} ·{" "}
+                          {o.quantity.toLocaleString(uiLocale())} {t(`factory.units.${o.unit}`)} ·{" "}
                           {o.size}
                         </p>
                       </div>
                       <div className="text-right text-sm">
                         <p className="text-destructive">
-                          {deliveries.get(o.id)?.lateDays}{" "}
-                          {deliveries.get(o.id)?.lateDays === 1
-                            ? "day"
-                            : "days"}{" "}
-                          late
+                          {t("factory.page.lateText", {
+                            days: deliveries.get(o.id)?.lateDays,
+                            unit:
+                              deliveries.get(o.id)?.lateDays === 1
+                                ? t("factory.page.day")
+                                : t("factory.page.days"),
+                          })}
                         </p>
-                        <p>Due {dateLabel(o.dueDate)}</p>
+                        <p>{t("factory.page.dueOn", { date: dateLabel(o.dueDate) })}</p>
                       </div>
                     </div>
                   ))}
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() =>
-                      ask(
-                        "Review the late orders and the machine schedule. Explain what is late and use the scheduler to explore options. Show the best plan among the plans tried, then wait for approval before any write.",
-                      )
-                    }
+                    onClick={() => ask(t("factory.page.reviewLatePrompt"))}
                   >
-                    Review with Munshi
+                    {t("factory.page.reviewWithMunshi")}
                     <IconArrowRight className="size-4" />
                   </Button>
                 </section>
@@ -680,7 +715,7 @@ export function FactoryPage({
                 className="text-sm underline underline-offset-4"
                 to={buildSettingsRoute("app", "factory")}
               >
-                Factory settings
+                {t("factory.page.factorySettings")}
               </Link>
               <div className="flex justify-end">
                 <Button
@@ -691,21 +726,23 @@ export function FactoryPage({
                   }}
                 >
                   <IconTool className="size-4" />
-                  Report machine off
+                  {t("factory.page.reportMachineOff")}
                 </Button>
               </div>
               <MachineLanes data={data} onProgress={onPreview} />
               <section className="rounded-xl border p-4 text-sm">
-                <h2 className="mb-3 font-medium">Working calendar</h2>
+                <h2 className="mb-3 font-medium">{t("factory.page.workingCalendar")}</h2>
                 <p>
-                  {data.calendar?.shiftStart} to {data.calendar?.shiftEnd} IST ·
-                  Sunday off
+                  {t("factory.page.calendarLine", {
+                    from: data.calendar?.shiftStart,
+                    to: data.calendar?.shiftEnd,
+                  })}
                 </p>
                 <p className="mt-2 text-muted-foreground">
-                  Overtime{" "}
+                  {t("factory.page.overtime")}{" "}
                   {Object.entries(data.calendar?.overtime ?? {})
                     .map(([d, m]) => `${dateLabel(d)}: ${m} min`)
-                    .join(", ") || "not scheduled"}
+                    .join(", ") || t("factory.page.notScheduled")}
                 </p>
               </section>
             </>
@@ -713,22 +750,22 @@ export function FactoryPage({
           {section === "orders" && (
             <>
               <Input
-                aria-label="Search orders"
-                placeholder="Search customer, product or size"
+                aria-label={t("factory.page.searchLabel")}
+                placeholder={t("factory.page.searchPlaceholder")}
                 className="max-w-sm"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
               <div className="overflow-hidden rounded-xl border">
                 <div className="hidden grid-cols-[2fr_1fr_1fr_1fr] gap-4 bg-muted/50 px-4 py-3 text-xs font-medium text-muted-foreground md:grid">
-                  <span>Customer / order</span>
-                  <span>Quantity</span>
-                  <span>Due / ready</span>
-                  <span>Amount</span>
+                  <span>{t("factory.page.colCustomer")}</span>
+                  <span>{t("factory.page.colQuantity")}</span>
+                  <span>{t("factory.page.colDueReady")}</span>
+                  <span>{t("factory.page.colAmount")}</span>
                 </div>
                 {filtered.length === 0 && (
                   <p className="p-6 text-muted-foreground">
-                    No matching orders.
+                    {t("factory.page.noMatching")}
                   </p>
                 )}
                 {filtered.map((o) => (
@@ -748,7 +785,9 @@ export function FactoryPage({
                       </p>
                       {o.status !== "pending" ? (
                         <p className="text-sm text-muted-foreground">
-                          {o.status === "done" ? "Complete" : "Cancelled"}
+                          {o.status === "done"
+                            ? t("factory.page.complete")
+                            : t("factory.page.cancelled")}
                         </p>
                       ) : (
                         <div className="flex flex-wrap gap-1">
@@ -783,7 +822,7 @@ export function FactoryPage({
                               setProposal(null);
                             }}
                           >
-                            Edit order
+                            {t("factory.page.editOrder")}
                           </Button>{" "}
                           <Button
                             variant="ghost"
@@ -793,16 +832,16 @@ export function FactoryPage({
                               onPreview({ kind: "cancel-order", orderId: o.id })
                             }
                           >
-                            Cancel order
+                            {t("factory.page.cancelOrder")}
                           </Button>
                         </div>
                       )}
                     </div>
                     <p className="text-sm">
-                      {o.quantity.toLocaleString("en-IN")} {o.unit}
+                      {o.quantity.toLocaleString(uiLocale())} {t(`factory.units.${o.unit}`)}
                     </p>
                     <div className="text-sm">
-                      <p>Due {dateLabel(o.dueDate)}</p>
+                      <p>{t("factory.page.dueOn", { date: dateLabel(o.dueDate) })}</p>
                       <p
                         className={
                           (deliveries.get(o.id)?.lateDays ?? 0) > 0
@@ -831,8 +870,10 @@ export function FactoryPage({
                   <div>
                     <p className="font-medium">{c.name}</p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      Billed {money(c.billedPaise)} · Received{" "}
-                      {money(c.paidPaise)}
+                      {t("factory.page.billedReceived", {
+                        billed: money(c.billedPaise),
+                        paid: money(c.paidPaise),
+                      })}
                     </p>
                     <details
                       className="mt-3 text-sm"
@@ -849,7 +890,7 @@ export function FactoryPage({
                       }}
                     >
                       <summary className="cursor-pointer underline underline-offset-4">
-                        Customer ledger
+                        {t("factory.page.customerLedger")}
                       </summary>
                       <div className="mt-3 space-y-2">
                         {data.orders
@@ -865,11 +906,16 @@ export function FactoryPage({
                                   : ""
                               }
                             >
-                              Order · {o.product} ·{" "}
-                              {o.quantity.toLocaleString("en-IN")} {o.unit} ·{" "}
-                              {money(o.quantity * o.ratePaise)} · due{" "}
-                              {dateLabel(o.dueDate)}
-                              {o.status === "cancelled" ? " · cancelled" : ""}
+                              {t("factory.page.ledgerOrder", {
+                                product: o.product,
+                                qty: o.quantity.toLocaleString(uiLocale()),
+                                unit: t(`factory.units.${o.unit}`),
+                                amount: money(o.quantity * o.ratePaise),
+                                date: dateLabel(o.dueDate),
+                              })}
+                              {o.status === "cancelled"
+                                ? t("factory.page.cancelledSuffix")
+                                : ""}
                             </p>
                           ))}
                         {data.payments
@@ -878,19 +924,22 @@ export function FactoryPage({
                           .reverse()
                           .map((p) => (
                             <p key={p.id}>
-                              Received {money(p.amountPaise)} · {p.mode} ·{" "}
-                              {new Intl.DateTimeFormat("en-IN", {
-                                timeZone: "Asia/Kolkata",
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                              }).format(new Date(p.createdAt))}
+                              {t("factory.page.receivedLine", {
+                                amount: money(p.amountPaise),
+                                mode: t(`factory.paymentMode.${p.mode}`),
+                                date: new Intl.DateTimeFormat(uiLocale(), {
+                                  timeZone: "Asia/Kolkata",
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                }).format(new Date(p.createdAt)),
+                              })}
                             </p>
                           ))}
                         {!data.orders.some((o) => o.customerId === c.id) &&
                           !data.payments.some((p) => p.customerId === c.id) && (
                             <p className="text-muted-foreground">
-                              No orders or payments yet.
+                              {t("factory.page.noOrdersOrPayments")}
                             </p>
                           )}
                       </div>
@@ -902,7 +951,9 @@ export function FactoryPage({
                         {money(c.billedPaise - c.paidPaise)}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {c.billedPaise < c.paidPaise ? "credit" : "outstanding"}
+                        {c.billedPaise < c.paidPaise
+                          ? t("factory.page.credit")
+                          : t("factory.page.outstanding")}
                       </p>
                     </div>
                     <Button
@@ -923,7 +974,7 @@ export function FactoryPage({
                       }}
                     >
                       <IconCash className="size-4" />
-                      Record
+                      {t("factory.page.record")}
                     </Button>
                   </div>
                 </div>
@@ -937,7 +988,7 @@ export function FactoryPage({
               onClick={() => setResetOpen(true)}
             >
               <IconRefresh className="size-4" />
-              Reset demo data
+              {t("factory.page.resetDemoData")}
             </Button>
           </div>
         </>
@@ -952,16 +1003,16 @@ export function FactoryPage({
           <DialogHeader>
             <DialogTitle>
               {proposal
-                ? "Review before saving"
+                ? t("factory.page.reviewBeforeSaving")
                 : dialog === "customer"
-                  ? "Add customer"
+                  ? t("factory.page.addCustomerTitle")
                   : editingOrderId
-                    ? "Edit order"
+                    ? t("factory.page.editOrderTitle")
                     : dialog === "payment"
-                      ? "Record a payment"
+                      ? t("factory.page.recordPaymentTitle")
                       : dialog === "down"
-                        ? "Report machine off"
-                        : "New order"}
+                        ? t("factory.page.reportMachineOffTitle")
+                        : t("factory.page.newOrderTitle")}
             </DialogTitle>
           </DialogHeader>
           {localError && (
@@ -979,8 +1030,8 @@ export function FactoryPage({
                   onClick={() => onPreview(proposal.operation, true)}
                 >
                   {check.isFetching
-                    ? "Comparing plans…"
-                    : "Compare schedule options"}
+                    ? t("factory.page.comparingPlans")
+                    : t("factory.page.compareScheduleOptions")}
                 </Button>
               )}
               <div className="flex justify-end gap-2">
@@ -1018,8 +1069,8 @@ export function FactoryPage({
                 >
                   {proposal.operation.kind === "job-progress" ||
                   proposal.operation.kind === "cancel-order"
-                    ? "Back"
-                    : "Edit"}
+                    ? t("factory.common.back")
+                    : t("factory.common.edit")}
                 </Button>
                 {localError && (
                   <Button
@@ -1027,14 +1078,16 @@ export function FactoryPage({
                     disabled={check.isFetching || save.isPending}
                     onClick={() => onPreview(proposal.operation)}
                   >
-                    Preview again
+                    {t("factory.common.previewAgain")}
                   </Button>
                 )}
                 <Button
                   disabled={save.isPending || check.isFetching}
                   onClick={approve}
                 >
-                  {save.isPending ? "Saving…" : "Approve and save"}
+                  {save.isPending
+                    ? t("factory.common.saving")
+                    : t("factory.common.approveAndSave")}
                 </Button>
               </div>
             </>
@@ -1062,7 +1115,7 @@ export function FactoryPage({
               }}
             >
               <div className="space-y-2">
-                <Label htmlFor="payment-customer">Customer</Label>
+                <Label htmlFor="payment-customer">{t("factory.orderForm.customer")}</Label>
                 <Select
                   value={customerId || data.customers[0]?.id}
                   onValueChange={setCustomerId}
@@ -1081,7 +1134,7 @@ export function FactoryPage({
               </div>
               <Field
                 name="amount"
-                label="Amount received, INR"
+                label={t("factory.page.amountReceived")}
                 defaultValue={
                   formDraft?.kind === "record-payment"
                     ? formDraft.amountPaise / 100
@@ -1093,7 +1146,7 @@ export function FactoryPage({
                 required
               />
               <div className="space-y-2">
-                <Label htmlFor="mode">Payment method</Label>
+                <Label htmlFor="mode">{t("factory.page.paymentMethod")}</Label>
                 <Select value={paymentMode} onValueChange={setPaymentMode}>
                   <SelectTrigger id="mode">
                     <SelectValue />
@@ -1101,14 +1154,14 @@ export function FactoryPage({
                   <SelectContent>
                     {["UPI", "cash", "bank", "cheque"].map((m) => (
                       <SelectItem key={m} value={m}>
-                        {m}
+                        {t(`factory.paymentMode.${m.toLowerCase()}`)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <Button className="w-full" disabled={check.isFetching}>
-                Preview payment
+                {t("factory.page.previewPayment")}
               </Button>
             </form>
           ) : dialog === "down" ? (
@@ -1127,7 +1180,7 @@ export function FactoryPage({
               }}
             >
               <div className="space-y-2">
-                <Label htmlFor="machine">Machine</Label>
+                <Label htmlFor="machine">{t("factory.page.machine")}</Label>
                 <Select
                   value={machineId || data.machines[0]?.id}
                   onValueChange={setMachineId}
@@ -1147,7 +1200,7 @@ export function FactoryPage({
               <div className="grid grid-cols-2 gap-4">
                 <Field
                   name="from"
-                  label="From"
+                  label={t("factory.page.from")}
                   type="date"
                   defaultValue={
                     formDraft?.kind === "machine-down"
@@ -1158,7 +1211,7 @@ export function FactoryPage({
                 />
                 <Field
                   name="to"
-                  label="Through"
+                  label={t("factory.page.through")}
                   type="date"
                   defaultValue={
                     formDraft?.kind === "machine-down" ? formDraft.to : today()
@@ -1168,7 +1221,7 @@ export function FactoryPage({
               </div>
               <Field
                 name="reason"
-                label="Reason"
+                label={t("factory.page.reason")}
                 defaultValue={
                   formDraft?.kind === "machine-down"
                     ? formDraft.reason
@@ -1177,7 +1230,7 @@ export function FactoryPage({
                 required
               />
               <Button className="w-full" disabled={check.isFetching}>
-                Preview schedule impact
+                {t("factory.page.previewScheduleImpact")}
               </Button>
             </form>
           ) : null}
@@ -1187,27 +1240,28 @@ export function FactoryPage({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {data.ready ? "Replace factory demo data?" : "Load demo factory?"}
+              {data.ready
+                ? t("factory.page.resetTitleReady")
+                : t("factory.page.resetTitleEmpty")}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This replaces this organization's orders, machines, customers and
-              payments with fictional examples.
+              {t("factory.page.resetDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("factory.common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               disabled={reset.isPending}
               onClick={async () => {
                 try {
                   await reset.mutateAsync({ requestId: crypto.randomUUID() });
-                  toast.success("Demo factory loaded.");
+                  toast.success(t("factory.page.demoLoaded"));
                 } catch (e) {
                   toast.error(errorMessage(e));
                 }
               }}
             >
-              Load demo data
+              {t("factory.page.loadDemoData")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1222,6 +1276,7 @@ function MachineLanes({
   data: Factory;
   onProgress: (op: Operation) => void;
 }) {
+  const t = useT();
   return (
     <section className="space-y-4">
       {data.machines.map((m) => (
@@ -1235,15 +1290,18 @@ function MachineLanes({
             </div>
             <span className="text-xs text-muted-foreground">
               {m.stage === "cutting"
-                ? `${m.kgPerHour} kg / hour`
-                : `${m.speedPerHour.toLocaleString("en-IN")} packets / hour`}{" "}
-              · {m.changeoverMin} min changeover
+                ? t("factory.machineLane.kgPerHour", { n: m.kgPerHour })
+                : t("factory.machineLane.packetsPerHour", { n: m.speedPerHour.toLocaleString(uiLocale()) })}{" "}
+              · {t("factory.machineLane.changeover", { n: m.changeoverMin })}
             </span>
           </div>
           {m.downFrom && (
             <p className="border-b px-4 py-2 text-sm text-destructive">
-              Off {dateLabel(m.downFrom)} to {dateLabel(m.downTo!)} ·{" "}
-              {m.downReason}
+              {t("factory.machineLane.off", {
+                from: dateLabel(m.downFrom),
+                to: dateLabel(m.downTo!),
+                reason: m.downReason,
+              })}
             </p>
           )}
           <div className="grid gap-3 p-4 md:grid-cols-3">
@@ -1260,19 +1318,19 @@ function MachineLanes({
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {dateLabel(j.start.slice(0, 10))} · {j.start.slice(11)}
-                    <span className="mx-1">to</span>
+                    <span className="mx-1">{t("factory.proposal.to")}</span>
                     {j.end.slice(0, 10) !== j.start.slice(0, 10)
                       ? dateLabel(j.end.slice(0, 10)) + " "
                       : ""}
                     {j.end.slice(11)}
                   </p>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    {j.quantity.toLocaleString("en-IN")} {j.unit} ·{" "}
+                    {j.quantity.toLocaleString(uiLocale())} {t(`factory.units.${j.unit}`)} ·{" "}
                     {j.state === "running"
-                      ? "Running"
+                      ? t("factory.machineLane.running")
                       : j.state === "paused"
-                        ? "Paused"
-                        : "Queued"}
+                        ? t("factory.machineLane.paused")
+                        : t("factory.machineLane.queued")}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-1">
                     {j.state === "running" ? (
@@ -1290,7 +1348,7 @@ function MachineLanes({
                           })
                         }
                       >
-                        Pause
+                        {t("factory.machineLane.pause")}
                       </Button>
                     ) : (
                       <Button
@@ -1312,7 +1370,7 @@ function MachineLanes({
                           })
                         }
                       >
-                        Start
+                        {t("factory.machineLane.start")}
                       </Button>
                     )}
                     <Button
@@ -1334,13 +1392,13 @@ function MachineLanes({
                         })
                       }
                     >
-                      Complete
+                      {t("factory.machineLane.complete")}
                     </Button>
                   </div>
                 </div>
               ))}
             {data.jobs.filter((j) => j.machineId === m.id).length === 0 && (
-              <p className="text-sm text-muted-foreground">No jobs planned.</p>
+              <p className="text-sm text-muted-foreground">{t("factory.machineLane.noJobs")}</p>
             )}
           </div>
         </div>
