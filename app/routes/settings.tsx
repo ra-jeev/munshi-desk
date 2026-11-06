@@ -1,0 +1,39 @@
+import { useT } from "@agent-native/core/client/i18n";
+import { useSetPageTitle } from "@agent-native/toolkit/app-shell";
+import {
+  AccountSettingsCard,
+  SettingsTabsPage,
+  useAgentSettingsTabs,
+} from "@agent-native/toolkit/app/settings";
+
+import { FactorySettings } from "@/components/factory/FactorySettings";
+import { APP_TITLE } from "@/lib/app-config";
+
+import changelog from "../../CHANGELOG.md?raw";
+
+export function meta() {
+  return [{ title: `Settings - ${APP_TITLE}` }];
+}
+
+// Chat has no app rows here: core Preferences owns the interface language.
+export default function SettingsRoute() {
+  const t = useT();
+  const agentSettingsTabs = useAgentSettingsTabs();
+  useSetPageTitle(t("settings.title"));
+
+  return (
+    <SettingsTabsPage
+      account={<AccountSettingsCard />}
+      extraTabs={agentSettingsTabs}
+      appAreas={[
+        {
+          id: "factory",
+          label: "Factory",
+          content: <FactorySettings />,
+          keywords: "machines shifts holidays rates",
+        },
+      ]}
+      whatsNewMarkdown={changelog}
+    />
+  );
+}
