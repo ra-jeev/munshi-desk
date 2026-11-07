@@ -20,16 +20,49 @@ import { factoryError } from "@/lib/factory-error";
 import type { Operation } from "../server/lib/contracts";
 import type { view } from "../server/lib/factory";
 
+type Draft = { operation: Operation; previewId: string } | null;
+type CardState = {
+  editing: boolean;
+  corrected: Preview | null;
+  saved: boolean;
+  draft: Draft;
+};
+
+// The chat redraws this card when the run behind it ends, for example after a
+// correction denies the pending approval. Card state lives here, keyed by the
+// proposal's requestId, so a redraw keeps the correction in progress.
+const cardStates = new Map<string, CardState>();
+
+function useCardState<K extends keyof CardState>(
+  key: string | undefined,
+  field: K,
+  initial: CardState[K],
+) {
+  const stored = key ? cardStates.get(key)?.[field] : undefined;
+  const [value, setValue] = useState<CardState[K]>(stored ?? initial);
+  const set = (next: CardState[K]) => {
+    if (key) {
+      const current = cardStates.get(key) ?? {
+        editing: false,
+        corrected: null,
+        saved: false,
+        draft: null,
+      };
+      cardStates.set(key, { ...current, [field]: next });
+    }
+    setValue(next);
+  };
+  return [value, set] as const;
+}
+
 function EditableProposal({ result }: { result: Preview }) {
   const t = useT();
   const control = useAgentKitControl();
-  const [editing, setEditing] = useState(false);
-  const [corrected, setCorrected] = useState<Preview | null>(null);
-  const [saved, setSaved] = useState(false);
-  const [draft, setDraft] = useState<{
-    operation: Operation;
-    previewId: string;
-  } | null>(null);
+  const key = result?.requestId;
+  const [editing, setEditing] = useCardState(key, "editing", false);
+  const [corrected, setCorrected] = useCardState(key, "corrected", null);
+  const [saved, setSaved] = useCardState(key, "saved", false);
+  const [draft, setDraft] = useCardState(key, "draft", null);
   const factory = useActionQuery("get-factory", {}, { enabled: editing });
   const check = useActionQuery(
     "check-proposal",
@@ -45,7 +78,8 @@ function EditableProposal({ result }: { result: Preview }) {
     }
     if (draft && check.error) {
       toast.error(
-        factoryError(check.error) ?? t("factory.chatRenderer.couldNotPreviewCorrection"),
+        factoryError(check.error) ??
+          t("factory.chatRenderer.couldNotPreviewCorrection"),
       );
       setDraft(null);
     }
@@ -63,10 +97,21 @@ function EditableProposal({ result }: { result: Preview }) {
               try {
                 // Editing withdraws any pending agent run. The corrected card uses the
                 // same read action and explicit owner approval as the manual order form.
+                // A pending approval is denied, not cancelled: cancelling the run
+                // replaces this card with raw output and leaves stale Approve buttons.
                 const thread = await control.load();
-                await Promise.all(
-                  thread.activeRunIds.map((id) => control.cancel(id)),
-                );
+                const waiting = Object.entries(thread.approvalRunIds);
+                const waitingRuns = new Set(waiting.map(([, runId]) => runId));
+                await Promise.all([
+                  ...waiting.map(([approvalId, runId]) =>
+                    control.resolveApproval(runId, approvalId, {
+                      decision: "deny",
+                    }),
+                  ),
+                  ...thread.activeRunIds
+                    .filter((id) => !waitingRuns.has(id))
+                    .map((id) => control.cancel(id)),
+                ]);
                 setDraft({ operation, previewId: crypto.randomUUID() });
               } catch {
                 toast.error(t("factory.chatRenderer.couldNotWithdraw"));
@@ -128,7 +173,9 @@ function EditableProposal({ result }: { result: Preview }) {
                 }
               }}
             >
-              {save.isPending ? t("factory.chatRenderer.saving") : t("factory.chatRenderer.approveCorrectedOrder")}
+              {save.isPending
+                ? t("factory.chatRenderer.saving")
+                : t("factory.chatRenderer.approveCorrectedOrder")}
             </Button>
           )}
         </div>

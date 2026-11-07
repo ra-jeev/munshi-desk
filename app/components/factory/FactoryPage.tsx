@@ -71,9 +71,17 @@ const money = (n: number) =>
     maximumFractionDigits: 2,
   }).format(n / 100);
 const dateLabel = (v: string) =>
-  new Intl.DateTimeFormat(uiLocale(), { day: "numeric", month: "short" }).format(
-    new Date(v + "T12:00:00+05:30"),
-  );
+  new Intl.DateTimeFormat(uiLocale(), {
+    day: "numeric",
+    month: "short",
+  }).format(new Date(v + "T12:00:00+05:30"));
+/** Scheduler times are "YYYY-MM-DD HH:MM" in IST; show "9 Nov 11:18". */
+const readyLabel = (v: string) => {
+  const [day, time] = v.split(" ");
+  return day && time && /^\d{4}-\d{2}-\d{2}$/.test(day)
+    ? `${dateLabel(day)} ${time}`
+    : v;
+};
 const errorMessage = factoryError;
 const today = () =>
   new Intl.DateTimeFormat("en-CA", {
@@ -116,32 +124,45 @@ export function ProposalSummary({ result }: { result: Preview }) {
       {(op.kind === "create-order" || op.kind === "update-order") && (
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <span className="text-muted-foreground">{t("factory.proposal.product")}</span>
+            <span className="text-muted-foreground">
+              {t("factory.proposal.product")}
+            </span>
             <p>{op.order.product}</p>
           </div>
           <div>
-            <span className="text-muted-foreground">{t("factory.proposal.size")}</span>
+            <span className="text-muted-foreground">
+              {t("factory.proposal.size")}
+            </span>
             <p>{op.order.size}</p>
           </div>
           <div>
-            <span className="text-muted-foreground">{t("factory.proposal.quantity")}</span>
+            <span className="text-muted-foreground">
+              {t("factory.proposal.quantity")}
+            </span>
             <p>
-              {op.order.quantity.toLocaleString(uiLocale())} {t(`factory.units.${op.order.unit}`)}
+              {op.order.quantity.toLocaleString(uiLocale())}{" "}
+              {t(`factory.units.${op.order.unit}`)}
             </p>
           </div>
           <div>
-            <span className="text-muted-foreground">{t("factory.proposal.due")}</span>
+            <span className="text-muted-foreground">
+              {t("factory.proposal.due")}
+            </span>
             <p>{dateLabel(op.order.dueDate)}</p>
           </div>
           <div>
-            <span className="text-muted-foreground">{t("factory.proposal.rate")}</span>
+            <span className="text-muted-foreground">
+              {t("factory.proposal.rate")}
+            </span>
             <p>
               {money(op.order.ratePaise)} /{" "}
               {t(`factory.units.${op.order.unit === "kg" ? "kg" : "packet"}`)}
             </p>
           </div>
           <div>
-            <span className="text-muted-foreground">{t("factory.proposal.amount")}</span>
+            <span className="text-muted-foreground">
+              {t("factory.proposal.amount")}
+            </span>
             <p>{money(op.order.quantity * op.order.ratePaise)}</p>
           </div>
         </div>
@@ -186,7 +207,9 @@ export function ProposalSummary({ result }: { result: Preview }) {
         <div className="space-y-3">
           <p>
             {t("factory.proposal.shifts", {
-              shifts: op.settings.shifts.map((s) => s.start + "–" + s.end).join(", "),
+              shifts: op.settings.shifts
+                .map((s) => s.start + "–" + s.end)
+                .join(", "),
             })}
           </p>
           <p>
@@ -201,7 +224,12 @@ export function ProposalSummary({ result }: { result: Preview }) {
                   .join(", ") || t("factory.proposal.none"),
             })}
           </p>
-          <p>{t("factory.proposal.holidays", { dates: op.settings.holidays.join(", ") || t("factory.proposal.none") })}</p>
+          <p>
+            {t("factory.proposal.holidays", {
+              dates:
+                op.settings.holidays.join(", ") || t("factory.proposal.none"),
+            })}
+          </p>
           <p>
             {t("factory.proposal.defaultRate", {
               packetRate: money(op.settings.defaultRates.packets),
@@ -213,7 +241,9 @@ export function ProposalSummary({ result }: { result: Preview }) {
               {m.name} ·{" "}
               {m.stage === "cutting"
                 ? t("factory.proposal.kgPerHour", { n: m.kgPerHour })
-                : t("factory.proposal.packetsPerHour", { n: m.speedPerHour.toLocaleString(uiLocale()) })}{" "}
+                : t("factory.proposal.packetsPerHour", {
+                    n: m.speedPerHour.toLocaleString(uiLocale()),
+                  })}{" "}
               · {t("factory.proposal.changeover", { n: m.changeoverMin })}
             </p>
           ))}
@@ -247,7 +277,9 @@ export function ProposalSummary({ result }: { result: Preview }) {
           })}
         </p>
       )}
-      {op.kind === "create-order" && op.noOvertime && <p>{t("factory.proposal.noOvertime")}</p>}
+      {op.kind === "create-order" && op.noOvertime && (
+        <p>{t("factory.proposal.noOvertime")}</p>
+      )}
       {"planningNote" in result && result.planningNote && (
         <p className="text-muted-foreground">{result.planningNote}</p>
       )}
@@ -262,10 +294,10 @@ export function ProposalSummary({ result }: { result: Preview }) {
             <span>
               {d.moved && d.previousReady && (
                 <span className="mr-2 text-muted-foreground">
-                  {d.previousReady} {t("factory.proposal.to")}
+                  {readyLabel(d.previousReady)} {t("factory.proposal.to")}
                 </span>
               )}
-              {d.ready}
+              {readyLabel(d.ready)}
               {d.lateDays > 0 && (
                 <span className="ml-2 text-destructive">
                   {t("factory.proposal.late", { days: d.lateDays })}
@@ -379,8 +411,12 @@ export function OrderForm({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="packets">{t("factory.units.packetsLabel")}</SelectItem>
-              <SelectItem value="kg">{t("factory.units.kilogramsLabel")}</SelectItem>
+              <SelectItem value="packets">
+                {t("factory.units.packetsLabel")}
+              </SelectItem>
+              <SelectItem value="kg">
+                {t("factory.units.kilogramsLabel")}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -408,7 +444,9 @@ export function OrderForm({
         />
       </div>
       <Button type="submit" className="w-full" disabled={busy || !customerId}>
-        {busy ? t("factory.orderForm.checkingProposal") : t("factory.orderForm.previewOrder")}
+        {busy
+          ? t("factory.orderForm.checkingProposal")
+          : t("factory.orderForm.previewOrder")}
         <IconArrowRight className="size-4" />
       </Button>
     </form>
@@ -650,11 +688,13 @@ export function FactoryPage({
       </div>
       {!data.ready ? (
         <div className="rounded-xl border bg-card p-8 space-y-4">
-          <h2 className="text-xl font-semibold">{t("factory.page.setupTitle")}</h2>
-          <p className="text-muted-foreground">
-            {t("factory.page.setupDesc")}
-          </p>
-          <Button onClick={() => setResetOpen(true)}>{t("factory.page.loadDemoData")}</Button>
+          <h2 className="text-xl font-semibold">
+            {t("factory.page.setupTitle")}
+          </h2>
+          <p className="text-muted-foreground">{t("factory.page.setupDesc")}</p>
+          <Button onClick={() => setResetOpen(true)}>
+            {t("factory.page.loadDemoData")}
+          </Button>
         </div>
       ) : (
         <>
@@ -678,8 +718,8 @@ export function FactoryPage({
                           }
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {o.quantity.toLocaleString(uiLocale())} {t(`factory.units.${o.unit}`)} ·{" "}
-                          {o.size}
+                          {o.quantity.toLocaleString(uiLocale())}{" "}
+                          {t(`factory.units.${o.unit}`)} · {o.size}
                         </p>
                       </div>
                       <div className="text-right text-sm">
@@ -692,7 +732,11 @@ export function FactoryPage({
                                 : t("factory.page.days"),
                           })}
                         </p>
-                        <p>{t("factory.page.dueOn", { date: dateLabel(o.dueDate) })}</p>
+                        <p>
+                          {t("factory.page.dueOn", {
+                            date: dateLabel(o.dueDate),
+                          })}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -731,7 +775,9 @@ export function FactoryPage({
               </div>
               <MachineLanes data={data} onProgress={onPreview} />
               <section className="rounded-xl border p-4 text-sm">
-                <h2 className="mb-3 font-medium">{t("factory.page.workingCalendar")}</h2>
+                <h2 className="mb-3 font-medium">
+                  {t("factory.page.workingCalendar")}
+                </h2>
                 <p>
                   {t("factory.page.calendarLine", {
                     from: data.calendar?.shiftStart,
@@ -838,10 +884,15 @@ export function FactoryPage({
                       )}
                     </div>
                     <p className="text-sm">
-                      {o.quantity.toLocaleString(uiLocale())} {t(`factory.units.${o.unit}`)}
+                      {o.quantity.toLocaleString(uiLocale())}{" "}
+                      {t(`factory.units.${o.unit}`)}
                     </p>
                     <div className="text-sm">
-                      <p>{t("factory.page.dueOn", { date: dateLabel(o.dueDate) })}</p>
+                      <p>
+                        {t("factory.page.dueOn", {
+                          date: dateLabel(o.dueDate),
+                        })}
+                      </p>
                       <p
                         className={
                           (deliveries.get(o.id)?.lateDays ?? 0) > 0
@@ -849,7 +900,7 @@ export function FactoryPage({
                             : "text-muted-foreground"
                         }
                       >
-                        {deliveries.get(o.id)?.ready ?? o.status}
+                        {readyLabel(deliveries.get(o.id)?.ready ?? o.status)}
                       </p>
                     </div>
                     <p className="font-medium tabular-nums">
@@ -1115,7 +1166,9 @@ export function FactoryPage({
               }}
             >
               <div className="space-y-2">
-                <Label htmlFor="payment-customer">{t("factory.orderForm.customer")}</Label>
+                <Label htmlFor="payment-customer">
+                  {t("factory.orderForm.customer")}
+                </Label>
                 <Select
                   value={customerId || data.customers[0]?.id}
                   onValueChange={setCustomerId}
@@ -1291,7 +1344,9 @@ function MachineLanes({
             <span className="text-xs text-muted-foreground">
               {m.stage === "cutting"
                 ? t("factory.machineLane.kgPerHour", { n: m.kgPerHour })
-                : t("factory.machineLane.packetsPerHour", { n: m.speedPerHour.toLocaleString(uiLocale()) })}{" "}
+                : t("factory.machineLane.packetsPerHour", {
+                    n: m.speedPerHour.toLocaleString(uiLocale()),
+                  })}{" "}
               · {t("factory.machineLane.changeover", { n: m.changeoverMin })}
             </span>
           </div>
@@ -1325,7 +1380,8 @@ function MachineLanes({
                     {j.end.slice(11)}
                   </p>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    {j.quantity.toLocaleString(uiLocale())} {t(`factory.units.${j.unit}`)} ·{" "}
+                    {j.quantity.toLocaleString(uiLocale())}{" "}
+                    {t(`factory.units.${j.unit}`)} ·{" "}
                     {j.state === "running"
                       ? t("factory.machineLane.running")
                       : j.state === "paused"
@@ -1398,7 +1454,9 @@ function MachineLanes({
                 </div>
               ))}
             {data.jobs.filter((j) => j.machineId === m.id).length === 0 && (
-              <p className="text-sm text-muted-foreground">{t("factory.machineLane.noJobs")}</p>
+              <p className="text-sm text-muted-foreground">
+                {t("factory.machineLane.noJobs")}
+              </p>
             )}
           </div>
         </div>

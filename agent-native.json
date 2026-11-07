@@ -5,5 +5,11 @@
   },
   "doctor": {
     "failOnBuild": false
+  },
+  "translations": {
+    "locales": [
+      "en-US",
+      "hi-IN"
+    ]
   }
 }
