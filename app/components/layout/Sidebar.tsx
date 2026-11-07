@@ -1,4 +1,5 @@
 import { appPath } from "@agent-native/core/client/api-path";
+import { useActionQuery } from "@agent-native/core/client/hooks";
 import { useT } from "@agent-native/core/client/i18n";
 import {
   navigateWithAgentChatViewTransition,
@@ -151,6 +152,37 @@ function HomeNavLink({ collapsed }: { collapsed: boolean }) {
   }
 
   return <div className="px-2">{link}</div>;
+}
+
+function FactoryNavLinks({ collapsed }: { collapsed: boolean }) {
+  const t = useT();
+  const role = useActionQuery("get-my-role", {}, { retry: false });
+  const isOperator =
+    (role.data as { role?: string } | undefined)?.role === "operator";
+  const links = isOperator
+    ? ([
+        ["/my-jobs", t("factory.nav.myJobs"), t("factory.nav.myJobsShort")],
+      ] as const)
+    : ([
+        ["/today", t("factory.nav.today"), t("factory.nav.todayShort")],
+        ["/orders", t("factory.nav.orders"), t("factory.nav.ordersShort")],
+        ["/machines", t("factory.nav.machines"), t("factory.nav.machinesShort")],
+        ["/accounts", t("factory.nav.accounts"), t("factory.nav.accountsShort")],
+      ] as const);
+  return (
+    <>
+      {links.map(([to, label, short]) => (
+        <Link
+          key={to}
+          to={to}
+          className="flex min-h-10 items-center rounded-md px-3 text-sm font-medium hover:bg-sidebar-accent"
+          aria-label={label}
+        >
+          {collapsed ? short : label}
+        </Link>
+      ))}
+    </>
+  );
 }
 
 function ChatThreadsSection({ collapsed }: { collapsed: boolean }) {
@@ -408,12 +440,9 @@ export function Sidebar({
         )}
       >
         <HomeNavLink collapsed={collapsed} />
-        {([
-          ["/today", t("factory.nav.today"), t("factory.nav.todayShort")],
-          ["/orders", t("factory.nav.orders"), t("factory.nav.ordersShort")],
-          ["/machines", t("factory.nav.machines"), t("factory.nav.machinesShort")],
-          ["/accounts", t("factory.nav.accounts"), t("factory.nav.accountsShort")],
-        ] as const).map(([to, label, short]) => <Link key={to} to={to} className="flex min-h-10 items-center rounded-md px-3 text-sm font-medium hover:bg-sidebar-accent" aria-label={label}>{collapsed ? short : label}</Link>)}
+        {/* Stage 2 (Task 4): operators never see Today/Orders/Machines/
+            Accounts (money or other machines). They get My jobs + Chat. */}
+        <FactoryNavLinks collapsed={collapsed} />
         <ChatThreadsSection collapsed={collapsed} />
       </nav>
 

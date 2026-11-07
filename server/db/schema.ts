@@ -74,6 +74,23 @@ export const requests = pgTable("munshi_requests", {
     .$type<{ id: string; revision: number; message: string }>()
     .notNull(),
 });
+// Stage 2 (Task 4): owner alerts for operator reports (job progress and
+// machine-off). One row per saved operator report; the owner sees unresolved
+// alerts on Today (via get-factory view()) and acknowledges them. Additive.
+export const operatorAlerts = pgTable(
+  "munshi_operator_alerts",
+  {
+    id: text("id").primaryKey(),
+    orgId: text("org_id").notNull(),
+    createdAt: text("created_at").notNull(),
+    operatorEmail: text("operator_email").notNull(),
+    kind: text("kind", { enum: ["progress", "machine-off"] }).notNull(),
+    machineId: text("machine_id").notNull(),
+    detail: text("detail").notNull(),
+    resolvedAt: text("resolved_at"),
+  },
+  (t) => [index("munshi_operator_alert_org").on(t.orgId, t.createdAt)],
+);
 // Stage 2 (Task 3): each operator member is linked to one machine in the
 // same org. The owner sets the link in Factory settings; Task 4 reads it for
 // the operator screens/actions. One row per (org, operator).

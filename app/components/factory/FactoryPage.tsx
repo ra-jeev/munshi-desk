@@ -511,6 +511,7 @@ export function FactoryPage({
     },
   });
   const reset = useActionMutation("load-demo-data");
+  const ack = useActionMutation("ack-operator-alert");
   const [pendingCheck, setPendingCheck] = useState<{
     operation: Operation;
     previewId: string;
@@ -700,6 +701,42 @@ export function FactoryPage({
         <>
           {section === "today" && (
             <>
+              {/* Stage 2 (Task 4): saved operator reports. Planning again
+                  is a separate owner step; this only acknowledges. */}
+              {data.alerts.length > 0 && (
+                <section className="rounded-xl border bg-card p-4">
+                  <h2 className="mb-3 font-medium">
+                    {t("factory.alerts.title")}
+                  </h2>
+                  {data.alerts.map((a) => (
+                    <div
+                      key={a.id}
+                      className="flex flex-wrap items-center justify-between gap-2 border-t py-3 first:border-0"
+                    >
+                      <p className="text-sm">
+                        {t("factory.alerts.byline", {
+                          email: a.operatorEmail,
+                          detail: a.detail,
+                        })}
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={ack.isPending}
+                        onClick={async () => {
+                          try {
+                            await ack.mutateAsync({ alertId: a.id });
+                          } catch (e) {
+                            toast.error(errorMessage(e));
+                          }
+                        }}
+                      >
+                        {t("factory.alerts.markSeen")}
+                      </Button>
+                    </div>
+                  ))}
+                </section>
+              )}
               {late.length > 0 && (
                 <section className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
                   <h2 className="mb-3 font-medium">

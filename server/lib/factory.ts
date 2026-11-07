@@ -1,5 +1,5 @@
 import { fail } from "@agent-native/core/action";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 
 import { getDb, schema } from "../db/index.ts";
 import { normalizeSize } from "../domain/agent/size.ts";
@@ -64,7 +64,7 @@ export async function snapshot(orgId: string, db: Db | Tx = getDb()) {
     .from(schema.factories)
     .where(eq(schema.factories.orgId, orgId))
     .limit(1);
-  const [customers, machines, orders, payments] = await Promise.all([
+  const [customers, machines, orders, payments, alerts] = await Promise.all([
     db
       .select()
       .from(schema.customers)
@@ -89,11 +89,25 @@ export async function snapshot(orgId: string, db: Db | Tx = getDb()) {
       .where(eq(schema.payments.orgId, orgId))
       .orderBy(schema.payments.createdAt)
       .limit(5000),
+    // Stage 2 (Task 4): owner alerts from saved operator reports. Only
+    // unresolved rows; get-factory is owner-only so operators never see them.
+    db
+      .select()
+      .from(schema.operatorAlerts)
+      .where(
+        and(
+          eq(schema.operatorAlerts.orgId, orgId),
+          isNull(schema.operatorAlerts.resolvedAt),
+        ),
+      )
+      .orderBy(schema.operatorAlerts.createdAt)
+      .limit(100),
   ]);
   return {
     factory,
     customers,
     machines,
+    alerts,
     orders: orders.map((o) => ({
       ...o,
       status: orderLifecycle.parseState(o.status),
@@ -438,6 +452,7 @@ export function view(s: Snapshot) {
       jobs: [],
       deliveries: [],
       accounts: [],
+      alerts: s.alerts,
       calendar: null,
       defaultRates: { packets: 85, kg: 15000 },
     };
@@ -457,6 +472,7 @@ export function view(s: Snapshot) {
     payments: s.payments,
     calendar: s.factory.calendar,
     defaultRates: s.factory.defaultRates,
+    alerts: s.alerts,
     jobs: plan.jobs.map((j) => ({
       ...j,
       id: `${s.orders[j.orderId - 1]!.id}-${j.stage}`,

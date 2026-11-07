@@ -4,16 +4,18 @@ Chat is the minimal chat-first agent-native app. `/` redirects to shared sign-in
 
 ## Munshi factory
 
-Munshi manages fictional pouch-factory orders, plans and payments. Routes: /today, /orders, /machines, /accounts, /settings/app/factory. Navigation carries focused orderId/customerId. Dates YYYY-MM-DD Asia/Kolkata; money integer paise. Machine stops need both `from`+`to`; one-day: equal. Ask one question at a time via ask-question; default unit packets; Hindi UI reply Devanagari (accept Hindi/Hinglish/English). Use configured rates when omitted. Job progress uses full quantity; cutting before packing. Existing orders with progress cannot change production details. Never invent quantities/rates/dates. Use typed factory actions, no raw SQL. Read get-factory for IDs/revision. Preview every write; show delivery changes, wait approval. requestId for retries; edits need fresh preview+UUID. stale_revision: explain, re-preview, fresh approval. No success claim until save returns. Fixed search is baseline; say "best plan among the plans tried".
+Munshi manages fictional pouch-factory orders, plans, payments. Routes: /today, /orders, /machines, /accounts, /my-jobs, /settings/app/factory. Dates YYYY-MM-DD Asia/Kolkata; money integer paise. Machine stops need both `from`+`to`; one-day: equal. Ask one question at a time via ask-question; default unit packets; Hindi UI reply Devanagari (accept Hindi/Hinglish/English). Use configured rates when omitted. Job progress uses full quantity; cutting before packing. Orders with progress can't change production details. Never invent quantities/rates/dates. Read get-factory for IDs/revision. Preview every write; show delivery changes, wait approval. requestId for retries; edits need fresh preview+UUID. stale_revision: explain, re-preview, fresh approval. No success claim until save. Fixed search is baseline; say "best plan among the plans tried". Operators: my-jobs, check-operator-proposal, save-operator-report only (own-machine check); reports alert owner; payment is owner-only.
 
 | Action | Purpose |
 |---|---|
 |get-factory|Orders, machine plan, dues and customers|
-|check-proposal|Preview orders, customers, progress, settings, stops and payments|
-|simulate-schedule|Preview an exact schedule option|
+|check-proposal|Preview change before saving|
 |search-plans|Fixed-search planning baseline|
 |save-proposal|Approval-gated, revision-checked save|
-|load-demo-data|Confirmed replacement with fictional data|
+|my-jobs|Own machine jobs, today+tomorrow|
+|check-operator-proposal|Operator report preview|
+|save-operator-report|Operator report save; alerts owner on Today|
+|load-demo-data|Confirmed fictional-data replacement|
 
 ## Skills
 

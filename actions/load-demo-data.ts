@@ -1,11 +1,19 @@
 import { defineAction, fail } from "@agent-native/core/action";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { getDb, schema } from "../server/db/index.ts";
 import { dateOf, isClosed } from "../server/domain/scheduler/schedule.ts";
 import { ownerGuard } from "../server/lib/access.ts";
 import { orgFor, todayIST } from "../server/lib/factory.ts";
+
+/**
+ * Demo operator (Stage 2, Task 4): a made-up account linked to Pouch
+ * machine 2. There is no password here — sign in with this email through the
+ * framework sign-in to use the demo operator. The load adds org membership,
+ * the operator app role, and the machine link. Never a real credential.
+ */
+export const DEMO_OPERATOR_EMAIL = "operator@munshi-demo.example";
 
 /** The nth working day after `today` (skips the weekly off and holidays). */
 export function workingDueDate(today: string, n: number) {
@@ -81,6 +89,12 @@ export default defineAction({
       await tx
         .delete(schema.customers)
         .where(eq(schema.customers.orgId, orgId));
+      await tx
+        .delete(schema.operatorAlerts)
+        .where(eq(schema.operatorAlerts.orgId, orgId));
+      await tx
+        .delete(schema.operatorMachines)
+        .where(eq(schema.operatorMachines.orgId, orgId));
       await tx.delete(schema.machines).where(eq(schema.machines.orgId, orgId));
       const customers = [
         "Sharma Packaging",
@@ -89,7 +103,7 @@ export default defineAction({
         "Khan Enterprises",
       ].map((name) => ({ id: crypto.randomUUID(), orgId, name, phone: "" }));
       await tx.insert(schema.customers).values(customers);
-      await tx.insert(schema.machines).values([
+      const machineRows = [
         {
           id: crypto.randomUUID(),
           orgId,
@@ -117,7 +131,31 @@ export default defineAction({
           kgPerHour: 15,
           changeoverMin: 25,
         },
-      ]);
+      ];
+      await tx.insert(schema.machines).values(machineRows);
+      // Demo operator account (Task 4): org membership + operator app role +
+      // link to Pouch machine 2. Framework tables, seeded with static
+      // parameterized SQL inside this transaction (idempotent reloads).
+      const nowMs = Date.now();
+      await tx.execute(
+        sql`DELETE FROM org_members WHERE org_id = ${orgId} AND LOWER(email) = ${DEMO_OPERATOR_EMAIL}`,
+      );
+      await tx.execute(
+        sql`DELETE FROM app_member_roles WHERE org_id = ${orgId} AND app_id = 'munshi-desk' AND LOWER(email) = ${DEMO_OPERATOR_EMAIL}`,
+      );
+      await tx.execute(
+        sql`INSERT INTO org_members (id, org_id, email, role, joined_at) VALUES (${crypto.randomUUID()}, ${orgId}, ${DEMO_OPERATOR_EMAIL}, 'member', ${nowMs})`,
+      );
+      await tx.execute(
+        sql`INSERT INTO app_member_roles (id, org_id, app_id, email, role, updated_by, updated_at) VALUES (${crypto.randomUUID()}, ${orgId}, 'munshi-desk', ${DEMO_OPERATOR_EMAIL}, 'operator', ${DEMO_OPERATOR_EMAIL}, ${nowMs})`,
+      );
+      await tx
+        .insert(schema.operatorMachines)
+        .values({
+          orgId,
+          operatorEmail: DEMO_OPERATOR_EMAIL,
+          machineId: machineRows[2]!.id,
+        });
       const today = todayIST();
       const createdAt = new Date().toISOString();
       await tx.insert(schema.orders).values([

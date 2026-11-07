@@ -16,6 +16,14 @@ registerIdentityColumns([
     reason:
       "Switching the operator's machine needs the link to follow their email change; removing the member must end the grant.",
   },
+  {
+    table: "munshi_operator_alerts",
+    column: "operator_email",
+    emailChange: "rekey",
+    offboard: "delete",
+    reason:
+      "Alerts report who reported what, so they must follow the reporter's email change; removing the member ends their alerts.",
+  },
 ]);
 export const getDb = createGetDb(schema);
 export { schema };

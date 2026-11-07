@@ -35,5 +35,11 @@ CREATE INDEX IF NOT EXISTS munshi_request_org ON munshi_requests(org_id);
     // or with the membership (identity policy in server/db/index.ts).
     sql: `CREATE TABLE IF NOT EXISTS munshi_operator_machines (org_id TEXT NOT NULL, operator_email TEXT NOT NULL, machine_id TEXT NOT NULL REFERENCES munshi_machines(id) ON DELETE CASCADE, PRIMARY KEY (org_id, operator_email)); CREATE INDEX IF NOT EXISTS munshi_operator_machine_machine ON munshi_operator_machines(org_id, machine_id);`,
   },
+  {
+    version: 5,
+    name: "operator-alerts",
+    // Stage 2 (Task 4): unresolved operator reports alert the owner on Today.
+    sql: `CREATE TABLE IF NOT EXISTS munshi_operator_alerts (id TEXT PRIMARY KEY, org_id TEXT NOT NULL, created_at TEXT NOT NULL, operator_email TEXT NOT NULL, kind TEXT NOT NULL CHECK(kind IN ('progress','machine-off')), machine_id TEXT NOT NULL, detail TEXT NOT NULL, resolved_at TEXT); CREATE INDEX IF NOT EXISTS munshi_operator_alert_org ON munshi_operator_alerts(org_id, created_at);`,
+  },
 ];
 export default runMigrations(migrations, { table: "munshi_migrations" });
