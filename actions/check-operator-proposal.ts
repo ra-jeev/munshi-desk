@@ -1,10 +1,10 @@
 import { defineAction } from "@agent-native/core/action";
 import { z } from "zod";
 
-import { jobProgressOrMachineDown } from "../server/lib/operator-actions-schema.ts";
 import { orgFor, snapshot } from "../server/lib/factory.ts";
+import { jobProgressOrMachineDown } from "../server/lib/operator-actions-schema.ts";
 import {
-  assertOwnMachine,
+  assertJobOnOwnMachine,
   operatorMachineId,
   operatorPreview,
 } from "../server/lib/operator.ts";
@@ -25,7 +25,8 @@ export default defineAction({
   run: async ({ operation }, ctx) => {
     const orgId = orgFor(ctx);
     const mine = await operatorMachineId(orgId, ctx!.userEmail!);
-    assertOwnMachine(mine, operation.machineId);
-    return operatorPreview(await snapshot(orgId), operation);
+    const current = await snapshot(orgId);
+    assertJobOnOwnMachine(current, operation, mine);
+    return operatorPreview(current, operation);
   },
 });

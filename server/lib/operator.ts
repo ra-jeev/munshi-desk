@@ -42,6 +42,28 @@ export function assertOwnMachine(operatorMachine: string, jobMachine: string) {
     });
 }
 
+/**
+ * 403 unless the reported job is planned (or running) on the operator's own
+ * machine. The claimed op.machineId alone is not enough: an operator could
+ * otherwise start another machine's queued job by naming their own machine.
+ */
+export function assertJobOnOwnMachine(
+  s: Snapshot,
+  op: Operation,
+  operatorMachine: string,
+) {
+  assertOwnMachine(operatorMachine, "machineId" in op ? op.machineId : "");
+  if (op.kind !== "job-progress") return;
+  const order = s.orders.find((o) => o.id === op.orderId);
+  const running = order?.progress[op.stage];
+  const planned = view(s).jobs.find(
+    (j) => j.orderId === op.orderId && j.stage === op.stage,
+  );
+  const jobMachine =
+    running?.state === "running" ? running.machineId : planned?.machineId;
+  assertOwnMachine(operatorMachine, jobMachine ?? "");
+}
+
 /** Only these two operation kinds may go through the operator actions. */
 export function assertOperatorOperation(op: Operation) {
   if (op.kind !== "job-progress" && op.kind !== "machine-down")
@@ -54,9 +76,7 @@ export function assertOperatorOperation(op: Operation) {
 
 function datePlus(days: number) {
   const [y, m, d] = todayIST().split("-").map(Number);
-  return new Date(Date.UTC(y!, m! - 1, d! + days))
-    .toISOString()
-    .slice(0, 10);
+  return new Date(Date.UTC(y!, m! - 1, d! + days)).toISOString().slice(0, 10);
 }
 
 /**
@@ -72,8 +92,8 @@ export function myJobs(s: Snapshot, machineId: string) {
       errorCode: "operator_no_machine",
     });
   const [today, tomorrow] = [todayIST(), datePlus(1)];
-  const jobs = view(s).jobs
-    .filter(
+  const jobs = view(s)
+    .jobs.filter(
       (j) =>
         j.machineId === machineId &&
         (j.start.slice(0, 10) === today || j.start.slice(0, 10) === tomorrow),
@@ -144,6 +164,7 @@ export function operatorPreview(s: Snapshot, op: Operation, now = new Date()) {
 export function alertDetail(op: Operation) {
   if (op.kind === "job-progress")
     return `${op.stage} ${op.status} · ${op.quantity}`;
-  if (op.kind === "machine-down") return `${op.from} to ${op.to} · ${op.reason}`;
+  if (op.kind === "machine-down")
+    return `${op.from} to ${op.to} · ${op.reason}`;
   return op.kind;
 }

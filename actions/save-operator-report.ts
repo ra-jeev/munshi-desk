@@ -3,11 +3,11 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { getDb, schema } from "../server/db/index.ts";
+import { commit, orgFor, snapshot } from "../server/lib/factory.ts";
 import { jobProgressOrMachineDown } from "../server/lib/operator-actions-schema.ts";
-import { commit, orgFor } from "../server/lib/factory.ts";
 import {
   alertDetail,
-  assertOwnMachine,
+  assertJobOnOwnMachine,
   operatorMachineId,
 } from "../server/lib/operator.ts";
 
@@ -47,7 +47,7 @@ export default defineAction({
     const orgId = orgFor(ctx);
     const email = ctx!.userEmail!;
     const mine = await operatorMachineId(orgId, email);
-    assertOwnMachine(mine, args.operation.machineId);
+    assertJobOnOwnMachine(await snapshot(orgId), args.operation, mine);
     // Idempotency: commit() replays the stored result for a repeated
     // requestId. Only the first save creates the owner alert.
     const [prior] = await getDb()
@@ -62,15 +62,18 @@ export default defineAction({
       .limit(1);
     const result = await commit(orgId, args);
     if (!prior)
-      await getDb().insert(schema.operatorAlerts).values({
-        id: crypto.randomUUID(),
-        orgId,
-        createdAt: new Date().toISOString(),
-        operatorEmail: email.trim().toLowerCase(),
-        kind: args.operation.kind === "machine-down" ? "machine-off" : "progress",
-        machineId: mine,
-        detail: alertDetail(args.operation),
-      });
+      await getDb()
+        .insert(schema.operatorAlerts)
+        .values({
+          id: crypto.randomUUID(),
+          orgId,
+          createdAt: new Date().toISOString(),
+          operatorEmail: email.trim().toLowerCase(),
+          kind:
+            args.operation.kind === "machine-down" ? "machine-off" : "progress",
+          machineId: mine,
+          detail: alertDetail(args.operation),
+        });
     return { ...result, alerted: !prior };
   },
 });

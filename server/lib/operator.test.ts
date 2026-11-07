@@ -168,6 +168,68 @@ test("machine checks: other machine's job id gets 403 on preview and save", asyn
   );
 });
 
+test("operator cannot start a job planned on another machine by naming their own machine", async () => {
+  const { orgId, operatorEmail, pouchId, cutterId, today } = await setup();
+  const { getDb, schema } = await import("../db/index.ts");
+  const { snapshot, view } = await import("./factory.ts");
+  const db = getDb();
+  const otherPouch = crypto.randomUUID();
+  await db.insert(schema.machines).values({
+    id: otherPouch,
+    orgId,
+    name: "Pouch machine 1",
+    stage: "packing",
+    speedPerHour: 100000,
+    kgPerHour: 1000,
+    changeoverMin: 0,
+  });
+  const { eq } = await import("drizzle-orm");
+  const customerId = (
+    await db.select().from(schema.customers).where(eq(schema.customers.orgId, orgId)).limit(1)
+  )[0]!.id;
+  const nowIso = new Date().toISOString();
+  for (let i = 0; i < 3; i++)
+    await db.insert(schema.orders).values({
+      id: crypto.randomUUID(),
+      orgId,
+      customerId,
+      product: "Transparent pouches",
+      size: "4x6 inch",
+      quantity: 1200,
+      unit: "packets",
+      dueDate: today,
+      ratePaise: 85,
+      priority: 0,
+      status: "pending",
+      createdAt: nowIso,
+      progress: { cutting: { state: "done", machineId: cutterId, startedAt: nowIso, quantity: 1200 } },
+    });
+  const foreign = view(await snapshot(orgId)).jobs.find(
+    (j) => j.stage === "packing" && j.machineId === otherPouch,
+  );
+  assert.ok(foreign, "some packing job is planned on the other packing machine");
+  const ctx = { userEmail: operatorEmail, orgId, caller: "cli" as const };
+  const check = (await import("../../actions/check-operator-proposal.ts")).default;
+  const save = (await import("../../actions/save-operator-report.ts")).default;
+  const operation = {
+    kind: "job-progress",
+    orderId: foreign.orderId,
+    machineId: pouchId,
+    stage: "packing",
+    status: "started",
+    quantity: 1200,
+  } as const;
+  await assert.rejects(async () => check.run({ operation }, ctx), is403);
+  await assert.rejects(
+    async () =>
+      save.run(
+        { operation, plannedAt: nowIso, requestId: crypto.randomUUID(), revision: 0 },
+        ctx,
+      ),
+    is403,
+  );
+});
+
 test("operator saves own machine-off report; owner sees an alert on view(); ack resolves it", async () => {
   const { orgId, ownerEmail, operatorEmail, pouchId, today } = await setup();
   const ownerCtx = { userEmail: ownerEmail, orgId, caller: "cli" as const };
