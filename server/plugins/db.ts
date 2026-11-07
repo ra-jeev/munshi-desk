@@ -27,5 +27,13 @@ CREATE INDEX IF NOT EXISTS munshi_request_org ON munshi_requests(org_id);
     name: "factory-rates-and-job-progress",
     sql: `ALTER TABLE munshi_factories ADD COLUMN IF NOT EXISTS default_rates JSONB NOT NULL DEFAULT '{"packets":85,"kg":15000}'; ALTER TABLE munshi_orders ADD COLUMN IF NOT EXISTS progress JSONB NOT NULL DEFAULT '{}';`,
   },
+  {
+    version: 4,
+    name: "operator-machine-links",
+    // Stage 2 (Task 3): one machine per operator member in the same org.
+    // Additive only. The link disappears with the machine (ON DELETE CASCADE)
+    // or with the membership (identity policy in server/db/index.ts).
+    sql: `CREATE TABLE IF NOT EXISTS munshi_operator_machines (org_id TEXT NOT NULL, operator_email TEXT NOT NULL, machine_id TEXT NOT NULL REFERENCES munshi_machines(id) ON DELETE CASCADE, PRIMARY KEY (org_id, operator_email)); CREATE INDEX IF NOT EXISTS munshi_operator_machine_machine ON munshi_operator_machines(org_id, machine_id);`,
+  },
 ];
 export default runMigrations(migrations, { table: "munshi_migrations" });

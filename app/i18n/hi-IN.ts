@@ -308,6 +308,17 @@ const messages = {
       settingsSaved: "फैक्ट्री सेटिंग्स सेव हो गईं।",
       approveSettings: "सेटिंग्स मंज़ूर करें",
       checkingNewPlan: "नया प्लान जाँचा जा रहा है…",
+      operatorsTitle: "ऑपरेटर",
+      operatorsDesc:
+        "हर ऑपरेटर सिर्फ़ अपनी मशीन के काम देख सकता है। Team सेटिंग्स से ऑपरेटर रोल के साथ ऑपरेटर को इन्वाइट करें, फिर हर ऑपरेटर को एक मशीन से जोड़ें।",
+      operatorsEmpty:
+        "अभी कोई ऑपरेटर नहीं है। Team सेटिंग्स से ऑपरेटर को इन्वाइट करें।",
+      operatorsCouldNotLoad: "ऑपरेटर लोड नहीं हो सके।",
+      operator: "ऑपरेटर",
+      machine: "मशीन",
+      linkMachine: "मशीन से जोड़ें",
+      linkSaved: "ऑपरेटर {{machine}} से जोड़ा गया।",
+      linkCouldNotSave: "ऑपरेटर का लिंक सेव नहीं हो सका। फिर कोशिश करें।",
     },
     customer: {
       nameLabel: "ग्राहक का नाम",
@@ -343,6 +354,8 @@ const messages = {
     },
   },
   errors: {
+    owner_required: "यह काम सिर्फ़ मालिक (owner) ही कर सकता है।",
+    operator_not_a_member: "वह ऑपरेटर इस संगठन का सदस्य नहीं है।",
     schedule_unavailable:
       "मौजूदा मशीनों और काम के समय से एक साल के अंदर प्लान नहीं बन पा रहा। उन्हें बदलें और फिर प्रीव्यू करें।",
     sign_in_required: "अपनी फैक्ट्री खोलने के लिए साइन इन करें।",

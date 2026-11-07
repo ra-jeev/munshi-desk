@@ -2,6 +2,21 @@
 import json, os, re, subprocess, uuid
 
 env = dict(os.environ, DATABASE_URL='pglite:/tmp/munshi-cli-validation', AGENT_USER_EMAIL='dev@local.test', AGENT_ORG_ID='munshi-cli-test')
+
+# Stage 2 roles: factory actions now require the owner app role. Seed the CLI
+# user as the org owner through the framework org API (the normal creation
+# path), so owner-guarded actions run. If the org already exists, leave it.
+# The fresh disposable DB first needs the framework + app release migrations
+# (the same path as scripts/migrate-production.ts).
+seed = """const { withMigrationRuntime, closeDbExec } = await import('@agent-native/core/db');
+const { runFrameworkReleaseMigrations, runAppReleaseMigrations } = await import('@agent-native/core/server');
+await withMigrationRuntime(async () => { await runFrameworkReleaseMigrations(null); await runAppReleaseMigrations(); });
+await closeDbExec();
+const { createOrganization } = await import('@agent-native/core/org');
+try { await createOrganization('CLI test factory', 'dev@local.test', 'owner', { id: 'munshi-cli-test' }); }
+catch (e) { console.log('seed:', e.message); if (!/duplicate|unique|exists|conflict/i.test(e.message)) process.exit(1); }"""
+seeded=subprocess.run(['node','--import','tsx','--input-type=module','-e',seed],env=env,text=True,capture_output=True,timeout=180)
+if seeded.returncode: raise RuntimeError(seeded.stderr or seeded.stdout)
 def action(name, args, approved=False, succeeds=True):
     cmd=['./node_modules/.bin/agent-native','action',name,json.dumps(args)]
     if approved: cmd.append('--approved')

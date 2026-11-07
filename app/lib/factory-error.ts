@@ -43,6 +43,20 @@ export function factoryError(error: unknown): string {
   const catalog = errorCatalog();
   const code = errorCodeFrom(error);
   if (code && code in catalog) return catalog[code as keyof ErrorCatalog];
+  // Stage 2 owner guard: authorize denies with a bare 403 (no mapped
+  // errorCode). Map that denial to the translated owner-only text. This runs
+  // after the errorCode lookup so specifically-coded 403s (e.g.
+  // organization_required) keep their own translation.
+  const obj = error && typeof error === "object" ? (error as Record<string, unknown>) : null;
+  const status = obj?.status ?? obj?.statusCode ??
+    (obj?.data as Record<string, unknown> | undefined)?.status;
+  const rawMessage = typeof obj?.message === "string" ? obj.message : "";
+  if (
+    status === 403 ||
+    /requires munshi-desk (permission|role)/i.test(rawMessage)
+  ) {
+    return catalog.owner_required;
+  }
   const message =
     actionErrorMessage(error) ??
     (error instanceof Error

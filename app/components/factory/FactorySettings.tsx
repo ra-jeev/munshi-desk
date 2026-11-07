@@ -328,6 +328,90 @@ function SettingsForm({
     </form>
   );
 }
+type OperatorsData = {
+  operators: { email: string; machineId: string | null }[];
+  machines: { id: string; name: string; stage: string }[];
+};
+
+function OperatorsSection() {
+  const t = useT();
+  const query = useActionQuery("list-factory-operators", {});
+  const data = query.data as OperatorsData | undefined;
+  const link = useActionMutation("set-operator-machine");
+  const [picks, setPicks] = useState<Record<string, string>>({});
+  const [error, setError] = useState("");
+  const machineName = (id: string | null) =>
+    data?.machines.find((m) => m.id === id)?.name ?? "";
+  return (
+    <section className="max-w-3xl space-y-4 border-t pt-6">
+      <h2 className="font-medium">{t("factory.settings.operatorsTitle")}</h2>
+      <p className="text-sm text-muted-foreground">{t("factory.settings.operatorsDesc")}</p>
+      {query.isLoading ? (
+        <Skeleton className="h-24 w-full" />
+      ) : query.error ? (
+        <p role="alert" className="text-sm text-destructive">
+          {factoryError(query.error) ?? t("factory.settings.operatorsCouldNotLoad")}
+        </p>
+      ) : !data || data.operators.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t("factory.settings.operatorsEmpty")}</p>
+      ) : (
+        <div className="space-y-3">
+          {error && (
+            <p role="alert" className="text-sm text-destructive">{error}</p>
+          )}
+          {data.operators.map((op) => (
+            <div key={op.email} className="flex flex-wrap items-end gap-3">
+              <div className="space-y-2">
+                <Label>{t("factory.settings.operator")}</Label>
+                <p className="text-sm">{op.email}
+                  {op.machineId ? (
+                    <span className="text-muted-foreground"> · {machineName(op.machineId)}</span>
+                  ) : null}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`op-machine-${op.email}`}>{t("factory.settings.machine")}</Label>
+                <Select
+                  value={picks[op.email] ?? op.machineId ?? ""}
+                  onValueChange={(v) => setPicks((p) => ({ ...p, [op.email]: v }))}
+                >
+                  <SelectTrigger id={`op-machine-${op.email}`} className="w-56">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {data.machines.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={link.isPending || !(picks[op.email] ?? op.machineId)}
+                onClick={async () => {
+                  const machineId = picks[op.email] ?? op.machineId;
+                  if (!machineId) return;
+                  setError("");
+                  try {
+                    const result = await link.mutateAsync({ email: op.email, machineId });
+                    toast.success(t("factory.settings.linkSaved", { machine: (result as { machineName?: string }).machineName ?? machineName(machineId) }));
+                    await query.refetch();
+                  } catch (e) {
+                    setError(factoryError(e) ?? t("factory.settings.linkCouldNotSave"));
+                  }
+                }}
+              >
+                {link.isPending ? t("factory.common.saving") : t("factory.settings.linkMachine")}
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function FactorySettings() {
   const t = useT();
   const query = useActionQuery("get-factory", {});
@@ -427,6 +511,7 @@ export function FactorySettings() {
           {t("factory.settings.checkingNewPlan")}
         </p>
       )}
+      <OperatorsSection />
     </div>
   );
 }

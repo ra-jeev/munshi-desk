@@ -5,6 +5,7 @@ import {
 } from "@agent-native/core/application-state";
 import { z } from "zod";
 
+import { ownerGuard } from "../server/lib/access.ts";
 import { snapshot, view } from "../server/lib/factory.ts";
 export default defineAction({
   description:
@@ -12,6 +13,8 @@ export default defineAction({
   schema: z.object({}),
   http: false,
   readOnly: true,
+  // Stage 2 owner-only: it returns orders/customers/balances. TODO (Task 4): operators get their own my-jobs screen context; this stays owner-only.
+  authorize: ownerGuard,
   run: async (_, ctx) => {
     const navigation =
       (await readAppStateForCurrentTab("navigation")) ??

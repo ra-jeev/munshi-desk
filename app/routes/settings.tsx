@@ -1,4 +1,5 @@
 import { useT } from "@agent-native/core/client/i18n";
+import { TeamPage } from "@agent-native/toolkit/app/org";
 import { useSetPageTitle } from "@agent-native/toolkit/app-shell";
 import {
   AccountSettingsCard,
@@ -9,6 +10,8 @@ import {
 import { FactorySettings } from "@/components/factory/FactorySettings";
 import { APP_TITLE } from "@/lib/app-config";
 
+import { munshiRoles } from "../../server/lib/munshi-roles";
+
 import changelog from "../../CHANGELOG.md?raw";
 
 export function meta() {
@@ -18,7 +21,11 @@ export function meta() {
 // Chat has no app rows here: core Preferences owns the interface language.
 export default function SettingsRoute() {
   const t = useT();
-  const agentSettingsTabs = useAgentSettingsTabs();
+  // Stage 2 roles: the Organization tab gets the Munshi role column
+  // (owner/operator) so the owner can invite operators and assign roles.
+  const agentSettingsTabs = useAgentSettingsTabs({
+    organizationContent: <TeamPage appRoles={munshiRoles} showTitle={false} />,
+  });
   useSetPageTitle(t("settings.title"));
 
   return (

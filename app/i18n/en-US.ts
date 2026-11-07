@@ -308,6 +308,17 @@ const messages = {
       settingsSaved: "Factory settings saved.",
       approveSettings: "Approve settings",
       checkingNewPlan: "Checking the new plan…",
+      operatorsTitle: "Operators",
+      operatorsDesc:
+        "Each operator can see only the jobs on their own machine. Invite operators from Team settings with the Operator role, then link each operator to a machine.",
+      operatorsEmpty:
+        "No operators yet. Invite operators from Team settings.",
+      operatorsCouldNotLoad: "Operators could not load.",
+      operator: "Operator",
+      machine: "Machine",
+      linkMachine: "Link machine",
+      linkSaved: "Operator linked to {{machine}}.",
+      linkCouldNotSave: "Operator link could not save. Try again.",
     },
     customer: {
       nameLabel: "Customer name",
@@ -343,6 +354,8 @@ const messages = {
     },
   },
   errors: {
+    owner_required: "Only the owner can do this.",
+    operator_not_a_member: "That operator is not a member of this organization.",
     schedule_unavailable:
       "The current machines and working calendar cannot produce a plan within one year. Adjust them and preview again.",
     sign_in_required: "Sign in to open your factory.",

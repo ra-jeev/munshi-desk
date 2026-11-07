@@ -1,4 +1,5 @@
 import {
+  index,
   integer,
   jsonb,
   pgTable,
@@ -73,3 +74,20 @@ export const requests = pgTable("munshi_requests", {
     .$type<{ id: string; revision: number; message: string }>()
     .notNull(),
 });
+// Stage 2 (Task 3): each operator member is linked to one machine in the
+// same org. The owner sets the link in Factory settings; Task 4 reads it for
+// the operator screens/actions. One row per (org, operator).
+export const operatorMachines = pgTable(
+  "munshi_operator_machines",
+  {
+    orgId: text("org_id").notNull(),
+    operatorEmail: text("operator_email").notNull(),
+    machineId: text("machine_id")
+      .notNull()
+      .references(() => machines.id, { onDelete: "cascade" }),
+  },
+  (t) => [
+    uniqueIndex("munshi_operator_machine_org").on(t.orgId, t.operatorEmail),
+    index("munshi_operator_machine_machine").on(t.orgId, t.machineId),
+  ],
+);

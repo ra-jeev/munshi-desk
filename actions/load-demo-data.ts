@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { getDb, schema } from "../server/db/index.ts";
 import { dateOf, isClosed } from "../server/domain/scheduler/schedule.ts";
+import { ownerGuard } from "../server/lib/access.ts";
 import { orgFor, todayIST } from "../server/lib/factory.ts";
 
 /** The nth working day after `today` (skips the weekly off and holidays). */
@@ -27,6 +28,9 @@ export default defineAction({
         "UUID identifying this reset; reuse only when retrying the same reset",
       ),
   }),
+  // Stage 2 owner-only. TODO (Task 4): Task 4 adds a demo operator account;
+  // the load itself stays owner-only.
+  authorize: ownerGuard,
   needsApproval: true,
   allowPersistentApproval: false,
   run: async (args, ctx) => {
