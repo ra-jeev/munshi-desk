@@ -360,6 +360,8 @@ const messages = {
       correctedSaved: "ठीक किया गया ऑर्डर सेव हो गया।",
       approveOrder: "ऑर्डर मंज़ूर करें",
       orderSaved: "ऑर्डर सेव हो गया।",
+      approveProposal: "मंज़ूर करें",
+      proposalSaved: "सेव हो गया।",
       approveCorrectedOrder: "ठीक किया गया ऑर्डर मंज़ूर करें",
       saving: "सेव हो रहा है…",
       couldNotPreviewCorrection: "बदलाव का प्रीव्यू नहीं बन सका।",

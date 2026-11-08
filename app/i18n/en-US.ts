@@ -363,6 +363,8 @@ const messages = {
       correctedSaved: "Corrected order saved.",
       approveOrder: "Approve order",
       orderSaved: "Order saved.",
+      approveProposal: "Approve",
+      proposalSaved: "Saved.",
       approveCorrectedOrder: "Approve corrected order",
       saving: "Saving…",
       couldNotPreviewCorrection: "Could not preview this correction.",

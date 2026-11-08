@@ -86,6 +86,17 @@ function EditableProposal({ result }: { result: Preview }) {
   }, [draft, check.data, check.error, t]);
   if (!result?.operation) return <Skeleton className="h-24 w-full" />;
   const active = corrected ?? result;
+  const isOrder = active.operation.kind === "create-order";
+  const approveKey = corrected
+    ? "factory.chatRenderer.approveCorrectedOrder"
+    : isOrder
+      ? "factory.chatRenderer.approveOrder"
+      : "factory.chatRenderer.approveProposal";
+  const savedKey = corrected
+    ? "factory.chatRenderer.correctedSaved"
+    : isOrder
+      ? "factory.chatRenderer.orderSaved"
+      : "factory.chatRenderer.proposalSaved";
   if (editing && active.operation.kind === "create-order")
     return (
       <div className="space-y-3 rounded-xl border bg-card p-4">
@@ -141,62 +152,48 @@ function EditableProposal({ result }: { result: Preview }) {
   return (
     <div className="space-y-2">
       <ProposalSummary result={active} />
-      {active.operation.kind === "create-order" && !saved && (
+      {!saved && (
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={save.isPending}
-            onClick={() => setEditing(true)}
-          >
-            {t("factory.chatRenderer.correctOrder")}
-          </Button>
-          {
+          {isOrder && (
             <Button
+              variant="outline"
               size="sm"
               disabled={save.isPending}
-              onClick={async () => {
-                try {
-                  await save.mutateAsync({
-                    operation: active.operation,
-                    revision: active.revision,
-                    plannedAt: active.plannedAt,
-                    requestId: active.requestId,
-                  });
-                  setSaved(true);
-                  toast.success(
-                    t(
-                      corrected
-                        ? "factory.chatRenderer.correctedSaved"
-                        : "factory.chatRenderer.orderSaved",
-                    ),
-                  );
-                } catch (e) {
-                  toast.error(
-                    factoryError(e) ??
-                      t("factory.chatRenderer.proposalCouldNotSave"),
-                  );
-                }
-              }}
+              onClick={() => setEditing(true)}
             >
-              {save.isPending
-                ? t("factory.chatRenderer.saving")
-                : t(
-                    corrected
-                      ? "factory.chatRenderer.approveCorrectedOrder"
-                      : "factory.chatRenderer.approveOrder",
-                  )}
+              {t("factory.chatRenderer.correctOrder")}
             </Button>
-          }
+          )}
+          <Button
+            size="sm"
+            disabled={save.isPending}
+            onClick={async () => {
+              try {
+                // Same previewed request as the agent's gated save, so a later
+                // native approval replays this result instead of saving twice.
+                await save.mutateAsync({
+                  operation: active.operation,
+                  revision: active.revision,
+                  plannedAt: active.plannedAt,
+                  requestId: active.requestId,
+                });
+                setSaved(true);
+                toast.success(t(savedKey));
+              } catch (e) {
+                toast.error(
+                  factoryError(e) ??
+                    t("factory.chatRenderer.proposalCouldNotSave"),
+                );
+              }
+            }}
+          >
+            {save.isPending ? t("factory.chatRenderer.saving") : t(approveKey)}
+          </Button>
         </div>
       )}
       {saved && (
         <p role="status" className="text-sm text-muted-foreground">
-          {t(
-            corrected
-              ? "factory.chatRenderer.correctedSaved"
-              : "factory.chatRenderer.orderSaved",
-          )}
+          {t(savedKey)}
         </p>
       )}
     </div>
