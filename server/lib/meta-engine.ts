@@ -13,7 +13,9 @@ const capabilities = {
   computerUse: false,
   parallelToolCalls: true,
 };
-const models = ["muse-spark-1.3", "muse-wonder-1.0"];
+// Wonder is the default: in live tests it was faster and always showed the
+// preview card before asking for approval. Spark stays selectable.
+const models = ["muse-wonder-1.0", "muse-spark-1.3"];
 
 // Core 0.224.0 chat readiness recognizes built-in key names only. This app's
 // Meta-compatible engine therefore retains OPENAI_API_KEY for model inference.
@@ -21,7 +23,7 @@ const models = ["muse-spark-1.3", "muse-wonder-1.0"];
 registerAgentEngine({
   name: "munshi-meta",
   label: "Meta Muse",
-  description: "Meta Spark and Wonder with bounded transient-model retry.",
+  description: "Meta Wonder and Spark with bounded transient-model retry.",
   defaultModel: models[0]!,
   supportedModels: models,
   acceptsCustomModels: false,
