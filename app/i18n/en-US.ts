@@ -321,8 +321,7 @@ const messages = {
       checkingSettings: "Checking settings…",
       previewChanges: "Preview changes",
       settingsCouldNotLoad: "Factory settings could not load.",
-      loadDemoFirst:
-        "Load demo data on Today before configuring the factory.",
+      loadDemoFirst: "Load demo data on Today before configuring the factory.",
       previewSettingsFailed: "Could not preview settings.",
       settingsCouldNotSave: "Settings could not save. Preview them again.",
       settingsSaved: "Factory settings saved.",
@@ -331,8 +330,7 @@ const messages = {
       operatorsTitle: "Operators",
       operatorsDesc:
         "Each operator can see only the jobs on their own machine. Invite operators from Team settings with the Operator role, then link each operator to a machine.",
-      operatorsEmpty:
-        "No operators yet. Invite operators from Team settings.",
+      operatorsEmpty: "No operators yet. Invite operators from Team settings.",
       operatorsCouldNotLoad: "Operators could not load.",
       operator: "Operator",
       machine: "Machine",
@@ -349,8 +347,7 @@ const messages = {
     voice: {
       unsupported:
         "Voice recording needs a supported browser and HTTPS. You can still type to Munshi.",
-      transcribedSuccess:
-        "Your words are ready in the chat. Review and send.",
+      transcribedSuccess: "Your words are ready in the chat. Review and send.",
       transcriptionFailed: "Transcription failed. Try again.",
       transcribeFailed: "Could not transcribe. Try again.",
       micUnavailable:
@@ -364,18 +361,20 @@ const messages = {
       cancelCorrection: "Cancel correction",
       correctOrder: "Correct order",
       correctedSaved: "Corrected order saved.",
+      approveOrder: "Approve order",
+      orderSaved: "Order saved.",
       approveCorrectedOrder: "Approve corrected order",
       saving: "Saving…",
       couldNotPreviewCorrection: "Could not preview this correction.",
-      couldNotWithdraw:
-        "Could not withdraw the earlier proposal. Try again.",
+      couldNotWithdraw: "Could not withdraw the earlier proposal. Try again.",
       proposalCouldNotSave:
         "The proposal could not be saved. Preview it again.",
     },
   },
   errors: {
     owner_required: "Only the owner can do this.",
-    operator_not_a_member: "That operator is not a member of this organization.",
+    operator_not_a_member:
+      "That operator is not a member of this organization.",
     schedule_unavailable:
       "The current machines and working calendar cannot produce a plan within one year. Adjust them and preview again.",
     sign_in_required: "Sign in to open your factory.",
@@ -388,8 +387,7 @@ const messages = {
     invalid_size:
       "Give both pouch dimensions and the unit, for example 4x6 inch.",
     amount_too_large: "The order amount is too large.",
-    overtime_forbidden:
-      "Overtime is not allowed for this proposal.",
+    overtime_forbidden: "Overtime is not allowed for this proposal.",
     machine_not_found: "Machine not found.",
     invalid_dates: "The end date must be on or after the start date.",
     order_not_found: "Open order not found.",
@@ -401,14 +399,12 @@ const messages = {
     plan_below_baseline:
       "This option is worse than the fixed-search baseline. Preview the recommended plan before saving.",
     order_changed: "The order changed. Preview again.",
-    customer_exists:
-      "This customer already exists. Use the existing customer.",
+    customer_exists: "This customer already exists. Use the existing customer.",
     order_has_progress:
       "Production has started for this order. Its production details can no longer be edited.",
     partial_progress:
       "Report the full order quantity for this job. Partial completion is not supported in this demo.",
-    cutting_not_done:
-      "Complete cutting before starting or completing packing.",
+    cutting_not_done: "Complete cutting before starting or completing packing.",
     invalid_job_transition:
       "This job cannot be changed from its current state.",
     running_machine_changed:
@@ -420,10 +416,8 @@ const messages = {
       "The factory is outside its working hours. Update shifts or overtime before starting this job.",
     running_jobs:
       "Pause running jobs before changing machines or working hours.",
-    machine_running:
-      "Pause the running job before reporting this machine off.",
-    order_running:
-      "Pause the running job before cancelling this order.",
+    machine_running: "Pause the running job before reporting this machine off.",
+    order_running: "Pause the running job before cancelling this order.",
   },
 };
 

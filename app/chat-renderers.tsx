@@ -151,20 +151,26 @@ function EditableProposal({ result }: { result: Preview }) {
           >
             {t("factory.chatRenderer.correctOrder")}
           </Button>
-          {corrected && (
+          {
             <Button
               size="sm"
               disabled={save.isPending}
               onClick={async () => {
                 try {
                   await save.mutateAsync({
-                    operation: corrected.operation,
-                    revision: corrected.revision,
-                    plannedAt: corrected.plannedAt,
-                    requestId: corrected.requestId,
+                    operation: active.operation,
+                    revision: active.revision,
+                    plannedAt: active.plannedAt,
+                    requestId: active.requestId,
                   });
                   setSaved(true);
-                  toast.success(t("factory.chatRenderer.correctedSaved"));
+                  toast.success(
+                    t(
+                      corrected
+                        ? "factory.chatRenderer.correctedSaved"
+                        : "factory.chatRenderer.orderSaved",
+                    ),
+                  );
                 } catch (e) {
                   toast.error(
                     factoryError(e) ??
@@ -175,14 +181,22 @@ function EditableProposal({ result }: { result: Preview }) {
             >
               {save.isPending
                 ? t("factory.chatRenderer.saving")
-                : t("factory.chatRenderer.approveCorrectedOrder")}
+                : t(
+                    corrected
+                      ? "factory.chatRenderer.approveCorrectedOrder"
+                      : "factory.chatRenderer.approveOrder",
+                  )}
             </Button>
-          )}
+          }
         </div>
       )}
       {saved && (
         <p role="status" className="text-sm text-muted-foreground">
-          {t("factory.chatRenderer.correctedSaved")}
+          {t(
+            corrected
+              ? "factory.chatRenderer.correctedSaved"
+              : "factory.chatRenderer.orderSaved",
+          )}
         </p>
       )}
     </div>
