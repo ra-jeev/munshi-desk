@@ -181,6 +181,25 @@ function EditableProposal({ result }: { result: Preview }) {
                 });
                 setSaved(true);
                 toast.success(t(savedKey));
+                // Close the chat's own "Approve to run save proposal?" bar. Its
+                // save has the same requestId, so it replays this save instead
+                // of saving again. A corrected card already denied that save.
+                if (!corrected) {
+                  try {
+                    const thread = await control.load();
+                    await Promise.all(
+                      Object.entries(thread.approvalRunIds).map(
+                        ([approvalId, runId]) =>
+                          control.resolveApproval(runId, approvalId, {
+                            decision: "approve",
+                            optionIds: ["approve"],
+                          }),
+                      ),
+                    );
+                  } catch {
+                    // Saved already; the bar is only a leftover.
+                  }
+                }
               } catch (e) {
                 toast.error(
                   factoryError(e) ??
