@@ -193,6 +193,7 @@ const messages = {
       changeover: "{{n}} मिनट बदलाव",
       receivedBy: "{{amount}}, {{mode}} से मिला",
       balance: "बाकी {{before}} से {{after}}",
+      lateDeliveries: "देर से डिलीवरी: {{n}}",
       late: "{{days}} दिन देर से",
       overtime: "ओवरटाइम: {{items}}",
       none: "कोई नहीं",

@@ -22,6 +22,7 @@ export default defineAction({
   }),
   http: { method: "GET" },
   readOnly: true,
+  chatUI: { renderer: "munshi-operator-proposal" },
   run: async ({ operation }, ctx) => {
     const orgId = orgFor(ctx);
     const mine = await operatorMachineId(orgId, ctx!.userEmail!);

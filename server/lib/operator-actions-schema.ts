@@ -9,8 +9,20 @@ export type OperatorOperation = Extract<
   Operation,
   { kind: "job-progress" } | { kind: "machine-down" }
 >;
-export const jobProgressOrMachineDown: z.ZodType<OperatorOperation> =
-  z.discriminatedUnion("kind", [
-    operation.options.find((o) => o.shape.kind.value === "job-progress")!,
-    operation.options.find((o) => o.shape.kind.value === "machine-down")!,
-  ]) as unknown as z.ZodType<OperatorOperation>;
+const operatorOperation = z.discriminatedUnion("kind", [
+  operation.options.find((o) => o.shape.kind.value === "job-progress")!,
+  operation.options.find((o) => o.shape.kind.value === "machine-down")!,
+]);
+// GET previews (the My jobs screen) send the operation as a JSON string in the
+// query, like proposalSchema in contracts.ts; agent calls send an object.
+export const jobProgressOrMachineDown: z.ZodType<OperatorOperation> = z.preprocess(
+  (value) => {
+    if (typeof value !== "string") return value;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  },
+  operatorOperation,
+) as unknown as z.ZodType<OperatorOperation>;

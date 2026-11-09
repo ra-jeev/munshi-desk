@@ -4,7 +4,7 @@ import {
 } from "@agent-native/core/client/hooks";
 import { useT } from "@agent-native/core/client/i18n";
 import { useSetPageTitle } from "@agent-native/toolkit/app-shell/header-actions";
-import { IconArrowRight, IconTool } from "@tabler/icons-react";
+import { IconTool } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -22,6 +22,7 @@ import { factoryError } from "@/lib/factory-error";
 
 import type { Operation } from "../../../server/lib/contracts";
 import type { myJobs, operatorPreview } from "../../../server/lib/operator";
+import { OperatorProposalSummary } from "./OperatorProposal";
 
 type Jobs = ReturnType<typeof myJobs>;
 type Preview = ReturnType<typeof operatorPreview>;
@@ -59,6 +60,7 @@ export function MyJobsPage() {
 
   useEffect(() => {
     if (check.data && pendingOp) {
+      setLocalError("");
       setProposal(check.data as Preview);
       setRequestId((check.data as Preview).requestId);
       setPendingOp(null);
@@ -101,7 +103,7 @@ export function MyJobsPage() {
       <div className="mx-auto w-full max-w-3xl space-y-4 p-4 md:p-7">
         <p role="alert">{factoryError(query.error)}</p>
         <p className="text-sm text-muted-foreground">{t("factory.myJobs.noMachine")}</p>
-        <Button variant="outline" onClick={() => query.refetch()}>
+        <Button variant="outline" size="sm" onClick={() => query.refetch()}>
           {t("factory.common.tryAgain")}
         </Button>
       </div>
@@ -132,6 +134,7 @@ export function MyJobsPage() {
           onClick={() => {
             setOffOpen(true);
             setProposal(null);
+            setLocalError("");
           }}
         >
           <IconTool className="size-4" />
@@ -161,7 +164,7 @@ export function MyJobsPage() {
                   </p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {dateLabel(job.start.slice(0, 10))} · {job.start.slice(11)}{" "}
-                    <span className="mx-1">{t("factory.proposal.to")}</span>
+                    {t("factory.proposal.to")}{" "}
                     {job.end.slice(0, 10) !== job.start.slice(0, 10) ? `${dateLabel(job.end.slice(0, 10))} ` : ""}
                     {job.end.slice(11)}
                   </p>
@@ -169,18 +172,17 @@ export function MyJobsPage() {
                 {job.state !== "done" && (
                   <div className="flex flex-wrap gap-2">
                     {job.state !== "running" && (
-                      <Button size="sm" onClick={() => onProgress(job, "started")}>
-                        {t("factory.myJobs.started")}
-                        <IconArrowRight className="size-4" />
+                      <Button size="sm" variant="outline" onClick={() => onProgress(job, "started")}>
+                        {t("factory.machineLane.start")}
                       </Button>
                     )}
                     {job.state === "running" && (
                       <Button size="sm" variant="outline" onClick={() => onProgress(job, "paused")}>
-                        {t("factory.myJobs.paused")}
+                        {t("factory.machineLane.pause")}
                       </Button>
                     )}
                     <Button size="sm" variant="outline" onClick={() => onProgress(job, "done")}>
-                      {t("factory.myJobs.done")}
+                      {t("factory.machineLane.complete")}
                     </Button>
                   </div>
                 )}
@@ -213,38 +215,7 @@ export function MyJobsPage() {
           )}
           {proposal ? (
             <div className="space-y-4">
-              <div className="space-y-2 rounded-xl border bg-card p-4 text-sm">
-                <p className="font-medium">{proposal.machineName}</p>
-                {proposal.orderSummary && (
-                  <p>
-                    {proposal.orderSummary.product} · {proposal.orderSummary.size} ·{" "}
-                    {proposal.orderSummary.quantity.toLocaleString()}{" "}
-                    {t(`factory.units.${proposal.orderSummary.unit}`)}
-                  </p>
-                )}
-                {proposal.operation.kind === "job-progress" && (
-                  <p>
-                    {t(
-                      `factory.myJobs.${proposal.operation.status === "started" ? "started" : proposal.operation.status === "paused" ? "paused" : "done"}`,
-                    )}{" "}
-                    · {t(`factory.stage.${proposal.operation.stage}`)}
-                  </p>
-                )}
-                {proposal.operation.kind === "machine-down" && (
-                  <p>
-                    {dateLabel(proposal.operation.from)} ·{" "}
-                    {dateLabel(proposal.operation.to)} · {proposal.operation.reason}
-                  </p>
-                )}
-                {proposal.deliveries
-                  .filter((d) => d.moved || d.lateDays > 0)
-                  .map((d) => (
-                    <p key={d.id} className="text-muted-foreground">
-                      {d.ready}
-                      {d.lateDays > 0 ? ` · ${t("factory.proposal.late", { days: d.lateDays })}` : ""}
-                    </p>
-                  ))}
-              </div>
+              <OperatorProposalSummary result={proposal} />
               <div className="flex justify-end gap-2">
                 <Button
                   variant="outline"
@@ -289,9 +260,11 @@ export function MyJobsPage() {
                 <Label htmlFor="reason">{t("factory.page.reason")}</Label>
                 <Input id="reason" name="reason" required />
               </div>
-              <Button className="w-full" disabled={check.isFetching}>
-                {check.isFetching ? t("factory.myJobs.previewing") : t("factory.page.previewScheduleImpact")}
-              </Button>
+              <div className="flex justify-end">
+                <Button disabled={check.isFetching}>
+                  {check.isFetching ? t("factory.myJobs.previewing") : t("factory.page.previewScheduleImpact")}
+                </Button>
+              </div>
             </form>
           )}
         </DialogContent>

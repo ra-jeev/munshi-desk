@@ -194,6 +194,7 @@ const messages = {
       changeover: "{{n}} min changeover",
       receivedBy: "{{amount}} received by {{mode}}",
       balance: "Balance {{before}} to {{after}}",
+      lateDeliveries: "Late deliveries: {{n}}",
       late: "{{days}}d late",
       overtime: "Overtime: {{items}}",
       none: "None",

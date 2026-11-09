@@ -13,12 +13,14 @@ import {
   ProposalSummary,
   type Preview,
 } from "@/components/factory/FactoryPage";
+import { OperatorProposal } from "@/components/factory/OperatorProposal";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { factoryError } from "@/lib/factory-error";
 
 import type { Operation } from "../server/lib/contracts";
 import type { view } from "../server/lib/factory";
+import type { operatorPreview } from "../server/lib/operator";
 
 type Draft = { operation: Operation; previewId: string } | null;
 type CardState = {
@@ -204,5 +206,14 @@ registerActionChatRenderer({
   renderer: "munshi-proposal",
   Component: ({ context }) => (
     <EditableProposal result={context.resultJson as Preview} />
+  ),
+});
+registerActionChatRenderer({
+  id: "munshi-operator-proposal",
+  renderer: "munshi-operator-proposal",
+  Component: ({ context }) => (
+    <OperatorProposal
+      result={context.resultJson as ReturnType<typeof operatorPreview>}
+    />
   ),
 });
