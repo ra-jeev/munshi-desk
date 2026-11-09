@@ -5,7 +5,7 @@ import {
 import { useT } from "@agent-native/core/client/i18n";
 import { useAgentKitControl } from "@agent-native/toolkit/app/agentkit";
 import { registerActionChatRenderer } from "@agent-native/toolkit/app/chat";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 
 import {
@@ -57,6 +57,28 @@ function useCardState<K extends keyof CardState>(
   return [value, set] as const;
 }
 
+// The agent sometimes previews the same change twice, so two cards show the
+// same change. Both cards come from one plan revision. Once one saves, every
+// card with the same revision and change shows "Saved" and cannot save again.
+const savedChanges = new Set<string>();
+const savedListeners = new Set<() => void>();
+const changeKey = (p: Pick<Preview, "revision" | "operation">) =>
+  `${p.revision}:${JSON.stringify(p.operation)}`;
+function markChangeSaved(key: string) {
+  savedChanges.add(key);
+  savedListeners.forEach((l) => l());
+}
+function useChangeSaved(key: string) {
+  return useSyncExternalStore(
+    (l) => {
+      savedListeners.add(l);
+      return () => savedListeners.delete(l);
+    },
+    () => savedChanges.has(key),
+    () => false,
+  );
+}
+
 function EditableProposal({ result }: { result: Preview }) {
   const t = useT();
   const control = useAgentKitControl();
@@ -72,6 +94,10 @@ function EditableProposal({ result }: { result: Preview }) {
     { enabled: !!draft, retry: false },
   );
   const save = useActionMutation("save-proposal");
+  const activeForKey = corrected ?? result;
+  const sameChangeSaved = useChangeSaved(
+    activeForKey?.operation ? changeKey(activeForKey) : "",
+  );
   useEffect(() => {
     if (draft && check.data) {
       setCorrected(check.data as Preview);
@@ -154,7 +180,7 @@ function EditableProposal({ result }: { result: Preview }) {
   return (
     <div className="space-y-2">
       <ProposalSummary result={active} />
-      {!saved && (
+      {!saved && !sameChangeSaved && (
         <div className="flex flex-wrap gap-2">
           {isOrder && (
             <Button
@@ -180,6 +206,7 @@ function EditableProposal({ result }: { result: Preview }) {
                   requestId: active.requestId,
                 });
                 setSaved(true);
+                markChangeSaved(changeKey(active));
                 toast.success(t(savedKey));
                 // Close the chat's own "Approve to run save proposal?" bar. Its
                 // save has the same requestId, so it replays this save instead
@@ -212,7 +239,7 @@ function EditableProposal({ result }: { result: Preview }) {
           </Button>
         </div>
       )}
-      {saved && (
+      {(saved || sameChangeSaved) && (
         <p role="status" className="text-sm text-muted-foreground">
           {t(savedKey)}
         </p>

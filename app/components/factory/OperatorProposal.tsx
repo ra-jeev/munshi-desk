@@ -17,7 +17,8 @@ const dateLabel = (v: string) =>
     new Date(v + "T12:00:00+05:30"),
   );
 
-// Saved cards are remembered by requestId so a chat redraw keeps them saved.
+// Saved reports are remembered by revision + change, so a redraw or a
+// duplicate card for the same report shows it as saved.
 const savedIds = new Set<string>();
 
 /** What will be saved and how many deliveries it delays; no owner data. */
@@ -70,7 +71,9 @@ export function OperatorProposal({ result }: { result: Preview }) {
   const t = useT();
   const save = useActionMutation("save-operator-report");
   const [saved, setSavedState] = useState(
-    () => !!result?.requestId && savedIds.has(result.requestId),
+    () =>
+      !!result?.operation &&
+      savedIds.has(`${result.revision}:${JSON.stringify(result.operation)}`),
   );
   if (!result?.operation) return <Skeleton className="h-24 w-full" />;
   return (
@@ -93,7 +96,9 @@ export function OperatorProposal({ result }: { result: Preview }) {
                   plannedAt: result.plannedAt,
                   requestId: result.requestId,
                 });
-                savedIds.add(result.requestId);
+                savedIds.add(
+                  `${result.revision}:${JSON.stringify(result.operation)}`,
+                );
                 setSavedState(true);
                 toast.success(t("factory.myJobs.saved"));
               } catch (e) {
