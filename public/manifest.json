@@ -1,7 +1,7 @@
 {
-  "name": "Munshi Scaffold",
-  "short_name": "Munshi Scaffold",
-  "description": "Workspace app for Munshi Scaffold.",
+  "name": "Munshi Desk",
+  "short_name": "Munshi Desk",
+  "description": "A clerk for a small pouch factory.",
   "start_url": "./home",
   "background_color": "#111111",
   "theme_color": "#18181B",

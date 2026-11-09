@@ -13,7 +13,7 @@ import {
 } from "@agent-native/toolkit/app/chat/ownership-history";
 import { OrgSwitcher } from "@agent-native/toolkit/app/org";
 import { openCommandMenu } from "@agent-native/toolkit/app/shared";
-import { AgentNativeIcon } from "@agent-native/toolkit/app/shared/AgentNativeIcon";
+import { MunshiIcon } from "./MunshiIcon";
 import {
   IconEdit,
   IconHome,
@@ -406,9 +406,9 @@ export function Sidebar({
                 aria-label={APP_TITLE}
                 className="flex size-8 items-center justify-center rounded outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
               >
-                <AgentNativeIcon
+                <MunshiIcon
                   aria-hidden="true"
-                  className="h-3.5 w-6 text-sidebar-accent-foreground"
+                  className="size-6"
                 />
               </Link>
             </TooltipTrigger>
@@ -420,9 +420,9 @@ export function Sidebar({
               to="/"
               className="flex min-w-0 flex-1 items-center gap-3 rounded outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
             >
-              <AgentNativeIcon
+              <MunshiIcon
                 aria-hidden="true"
-                className="h-3.5 w-6 shrink-0 text-sidebar-accent-foreground"
+                className="size-6 shrink-0"
               />
               <span className="truncate text-sm font-semibold text-sidebar-accent-foreground">
                 {APP_TITLE}
