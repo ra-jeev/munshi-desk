@@ -138,7 +138,7 @@ function EditableProposal({ result }: { result: Preview }) {
           </p>
         )}
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           onClick={() => {
             setEditing(false);

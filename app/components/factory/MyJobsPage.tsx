@@ -90,7 +90,7 @@ export function MyJobsPage() {
 
   if (query.isLoading)
     return (
-      <div className="p-6 space-y-5">
+      <div className="mx-auto w-full max-w-3xl space-y-5 p-4 md:p-7">
         <Skeleton className="h-10 w-48" />
         <Skeleton className="h-32 w-full" />
         <Skeleton className="h-32 w-full" />
@@ -98,7 +98,7 @@ export function MyJobsPage() {
     );
   if (query.error)
     return (
-      <div className="p-8 space-y-4">
+      <div className="mx-auto w-full max-w-3xl space-y-4 p-4 md:p-7">
         <p role="alert">{factoryError(query.error)}</p>
         <p className="text-sm text-muted-foreground">{t("factory.myJobs.noMachine")}</p>
         <Button variant="outline" onClick={() => query.refetch()}>

@@ -792,15 +792,15 @@ export function FactoryPage({
           )}
           {section === "machines" && (
             <>
-              <Link
-                className="text-sm underline underline-offset-4"
-                to={buildSettingsRoute("app", "factory")}
-              >
-                {t("factory.page.factorySettings")}
-              </Link>
-              <div className="flex justify-end">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Button asChild variant="outline" size="sm">
+                  <Link to={buildSettingsRoute("app", "factory")}>
+                    {t("factory.page.factorySettings")}
+                  </Link>
+                </Button>
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={() => {
                     setDialog("down");
                     setProposal(null);
@@ -873,9 +873,9 @@ export function FactoryPage({
                             : t("factory.page.cancelled")}
                         </p>
                       ) : (
-                        <div className="flex flex-wrap gap-1">
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             disabled={Object.keys(o.progress).length > 0}
                             onClick={() => {
@@ -906,11 +906,11 @@ export function FactoryPage({
                             }}
                           >
                             {t("factory.page.editOrder")}
-                          </Button>{" "}
+                          </Button>
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
-                            className="mt-1"
+                            className="text-destructive hover:text-destructive"
                             onClick={() =>
                               onPreview({ kind: "cancel-order", orderId: o.id })
                             }
@@ -953,7 +953,7 @@ export function FactoryPage({
               {data.accounts.map((c) => (
                 <div
                   key={c.id}
-                  className="flex flex-wrap items-center justify-between gap-4 border-b p-5 last:border-0"
+                  className="flex flex-wrap items-center justify-between gap-4 border-b p-4 last:border-0"
                 >
                   <div>
                     <p className="font-medium">{c.name}</p>
@@ -1033,8 +1033,8 @@ export function FactoryPage({
                       </div>
                     </details>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
+                  <div className="flex w-full items-center justify-between gap-4 sm:w-auto">
+                    <div className="text-left sm:text-right">
                       <p className="font-semibold tabular-nums">
                         {money(c.billedPaise - c.paidPaise)}
                       </p>
@@ -1071,7 +1071,7 @@ export function FactoryPage({
           )}
           <div className="flex justify-end">
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => setResetOpen(true)}
             >
@@ -1425,7 +1425,7 @@ function MachineLanes({
                         ? t("factory.machineLane.paused")
                         : t("factory.machineLane.queued")}
                   </p>
-                  <div className="mt-3 flex flex-wrap gap-1">
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
                     {j.state === "running" ? (
                       <Button
                         variant="outline"
@@ -1467,7 +1467,7 @@ function MachineLanes({
                       </Button>
                     )}
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       disabled={
                         j.stage === "packing" &&

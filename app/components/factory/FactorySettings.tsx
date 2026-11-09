@@ -137,7 +137,8 @@ function SettingsForm({
             {shifts.length > 1 && (
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
+                className="shrink-0"
                 onClick={() => setShifts((s) => s.filter((_, j) => j !== i))}
               >
                 {t("factory.settings.remove")}
@@ -291,7 +292,7 @@ function SettingsForm({
             </div>
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               size="sm"
               disabled={machines.length <= 2}
               onClick={() => setMachines((ms) => ms.filter((_, j) => j !== i))}
