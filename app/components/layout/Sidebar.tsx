@@ -22,7 +22,7 @@ import {
   IconSearch,
 } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router";
+import { Link, NavLink, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import {
@@ -135,14 +135,16 @@ function FactoryNavLinks({ collapsed }: { collapsed: boolean }) {
   return (
     <>
       {links.map(([to, label, short]) => (
-        <Link
+        <NavLink
           key={to}
           to={to}
-          className="flex min-h-10 items-center rounded-md px-3 text-sm font-medium hover:bg-sidebar-accent"
+          className={({ isActive }) =>
+            `flex min-h-10 items-center rounded-md px-3 text-sm font-medium text-sidebar-accent-foreground hover:bg-sidebar-accent ${isActive ? "bg-sidebar-accent" : ""}`
+          }
           aria-label={label}
         >
           {collapsed ? short : label}
-        </Link>
+        </NavLink>
       ))}
     </>
   );

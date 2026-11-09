@@ -8,8 +8,8 @@ export default defineAppConfig({
     name: "Munshi Desk",
     // The source template keeps a renamed app from inheriting first-party email branding.
     sourceTemplate: "chat",
-    // Keep the template's authenticated entry explicit after renaming the app.
-    homePath: "/today",
+    // /home sends owners to Today and operators to My jobs.
+    homePath: "/home",
     // Optional: use your own absolute HTTPS logo URL in transactional emails.
     // logoUrl: "https://example.com/logo.png",
   },

@@ -17,7 +17,7 @@ import {
 } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, Navigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
 import {
@@ -465,6 +465,19 @@ function Field({
   );
 }
 
+/** Owner-facing text for a stored operator alert (English, ISO dates). */
+function alertDetailLabel(
+  detail: string,
+  t: ReturnType<typeof useT>,
+): string {
+  const down = /^(\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2}) · (.*)$/.exec(detail);
+  if (down) {
+    const [, from, to, reason] = down as unknown as [string, string, string, string];
+    return `${from === to ? dateLabel(from) : `${dateLabel(from)} ${t("factory.proposal.to")} ${dateLabel(to)}`} · ${reason}`;
+  }
+  return detail;
+}
+
 export function FactoryPage({
   section,
 }: {
@@ -475,6 +488,9 @@ export function FactoryPage({
   const [searchParams, setSearchParams] = useSearchParams();
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const query = useActionQuery("get-factory", {});
+  const role = useActionQuery("get-my-role", {}, { retry: false });
+  const isOperator =
+    (role.data as { role?: string } | undefined)?.role === "operator";
   const data = query.data as Factory | undefined;
   const cache = useQueryClient();
   const previousFactory = useRef<Factory | undefined>(undefined);
@@ -593,6 +609,8 @@ export function FactoryPage({
     );
     setLocalError("");
   }
+  // Operators have no owner screens: send them to their own jobs.
+  if (isOperator) return <Navigate to="/my-jobs" replace />;
   if (query.isLoading)
     return (
       <div className="p-6 space-y-5">
@@ -716,7 +734,7 @@ export function FactoryPage({
                       <p className="text-sm">
                         {t("factory.alerts.byline", {
                           email: a.operatorEmail,
-                          detail: a.detail,
+                          detail: alertDetailLabel(a.detail, t),
                         })}
                       </p>
                       <Button
