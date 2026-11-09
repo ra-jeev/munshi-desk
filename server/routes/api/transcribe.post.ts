@@ -27,7 +27,12 @@ export default defineEventHandler(async (event) => {
   return runWithRequestContext(
     { userEmail: session.email, ...(org.orgId ? { orgId: org.orgId } : {}) },
     async () => {
-      const secret = await resolveSecretDetailed("META_API_KEY");
+      // A user's own Meta key wins. Core does not let a signed-in user fall
+      // back to a deploy-level META_API_KEY, so use the deploy's Meta key
+      // that the chat engine already uses (OPENAI_API_KEY holds the Meta key).
+      let secret = await resolveSecretDetailed("META_API_KEY");
+      if (!secret.value && !secret.lookupFailed)
+        secret = await resolveSecretDetailed("OPENAI_API_KEY");
       if (secret.lookupFailed)
         throw createError({
           statusCode: 503,
