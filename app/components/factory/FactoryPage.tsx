@@ -623,7 +623,7 @@ export function FactoryPage({
     (o) => (deliveries.get(o.id)?.lateDays ?? 0) > 0,
   );
   return (
-    <div className="factory-workboard mx-auto w-full max-w-7xl space-y-6 p-4 md:p-7">
+    <div className="factory-workboard @container mx-auto w-full max-w-7xl space-y-6 p-4 md:p-7">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <IconCalendar className="size-4" />
@@ -840,7 +840,7 @@ export function FactoryPage({
                 onChange={(e) => setSearch(e.target.value)}
               />
               <div className="overflow-hidden rounded-xl border">
-                <div className="hidden grid-cols-[2fr_1fr_1fr_1fr] gap-4 bg-muted/50 px-4 py-3 text-xs font-medium text-muted-foreground md:grid">
+                <div className="hidden grid-cols-[2fr_1fr_1fr_1fr] gap-4 bg-muted/50 px-4 py-3 text-xs font-medium text-muted-foreground @2xl:grid">
                   <span>{t("factory.page.colCustomer")}</span>
                   <span>{t("factory.page.colQuantity")}</span>
                   <span>{t("factory.page.colDueReady")}</span>
@@ -854,7 +854,7 @@ export function FactoryPage({
                 {filtered.map((o) => (
                   <div
                     key={o.id}
-                    className="grid gap-3 border-t p-4 first:border-0 md:grid-cols-[2fr_1fr_1fr_1fr]"
+                    className="grid gap-3 border-t p-4 first:border-0 @2xl:grid-cols-[2fr_1fr_1fr_1fr]"
                   >
                     <div>
                       <p className="font-medium">
@@ -1396,7 +1396,7 @@ function MachineLanes({
               })}
             </p>
           )}
-          <div className="grid gap-3 p-4 md:grid-cols-3">
+          <div className="grid gap-3 p-4 @lg:grid-cols-2 @3xl:grid-cols-3">
             {data.jobs
               .filter((j) => j.machineId === m.id)
               .slice(0, 6)

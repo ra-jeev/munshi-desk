@@ -281,3 +281,12 @@
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.34);
 }
+
+/* Munshi: the side-panel chat (AgentSidebar) has no prop to turn off the
+   composer "+" menu in Agent-Native 0.224.0, so hide it here. The full chat
+   page already uses plusMenuMode="hidden". Realtime voice chat cannot run with
+   the Meta key setup, so its button is hidden too; dictation stays. */
+[data-agent-composer-slot="plus-button"],
+[data-composer-primary="voice-chat"] {
+  display: none !important;
+}
